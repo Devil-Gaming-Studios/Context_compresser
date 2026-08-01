@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Context Compressor</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <span class="brand-mark">ctx// compress</span>
+          <span class="brand-cursor" aria-hidden="true"></span>
+        </div>
+        <button id="settings-btn" class="icon-btn" title="Settings">⚙</button>
+      </header>
+
+      <div class="row row--controls">
+        <select id="model-select" title="Target model"></select>
+        <select id="preset-select" title="Preset"></select>
+      </div>
+
+      <div id="slider-row" class="row row--slider" hidden>
+        <span class="slider-label">target reduction</span>
+        <input id="target-slider" type="range" min="5" max="95" step="5" value="70" />
+        <span id="slider-value" class="slider-value">70%</span>
+      </div>
+
+      <textarea id="prompt-input" placeholder="Paste a prompt to compress…" spellcheck="false"></textarea>
+
+      <div class="row row--actions">
+        <button id="insert-btn" class="btn btn--ghost" title="Write the compressed result into the active page's focused field">
+          insert into page
+        </button>
+        <button id="compress-btn" class="btn btn--primary">compress →</button>
+      </div>
+
+      <div id="error-banner" class="error-banner" hidden></div>
+
+      <div id="result" class="result" hidden>
+        <div class="stats-row">
+          <div class="stat">
+            <div class="stat-value" id="stat-original">0</div>
+            <div class="stat-label">original</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="stat-compressed">0</div>
+            <div class="stat-label">compressed</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="stat-ratio">0%</div>
+            <div class="stat-label">reduction</div>
+          </div>
+        </div>
+        <textarea id="result-text" class="result-text" readonly spellcheck="false"></textarea>
+        <button id="copy-btn" class="btn btn--ghost btn--small">copy output</button>
+      </div>
+
+      <footer class="footer">
+        <span id="health-dot" class="health-dot" title="API status"></span>
+        <span id="health-label">checking API…</span>
+      </footer>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

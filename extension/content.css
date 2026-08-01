@@ -1,0 +1,61 @@
+#cc-float-btn {
+  position: fixed;
+  z-index: 2147483000;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: #e9efe9;
+  background: #121815;
+  border: 1px solid #263029;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+#cc-float-btn:hover {
+  border-color: #5fe6a4;
+  color: #5fe6a4;
+  transform: translateY(-1px);
+}
+
+#cc-float-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+}
+
+#cc-status-toast {
+  position: fixed;
+  z-index: 2147483000;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  background: #121815;
+  border: 1px solid #263029;
+  border-radius: 6px;
+  padding: 6px 10px;
+  max-width: 260px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+#cc-status-toast.cc-toast--visible {
+  opacity: 1;
+}
+
+#cc-status-toast.cc-toast--ok {
+  color: #5fe6a4;
+  border-color: #274538;
+}
+
+#cc-status-toast.cc-toast--err {
+  color: #c97a5a;
+  border-color: #3a2a24;
+}
+
+#cc-status-toast.cc-toast--pending {
+  color: #83948a;
+}

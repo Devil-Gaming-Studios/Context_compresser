@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Context Compressor — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <span class="brand-mark">ctx// compress</span>
+          <span class="brand-cursor" aria-hidden="true"></span>
+        </div>
+        <p class="tagline">settings</p>
+      </header>
+
+      <section class="panel">
+        <h2>Backend</h2>
+        <label class="field">
+          <span class="field-label">API base URL</span>
+          <input id="api-base" type="text" placeholder="http://localhost:8000" spellcheck="false" />
+        </label>
+        <p class="hint">
+          Point this at your Context Compressor backend. For any URL other than <code>localhost</code>/<code>127.0.0.1</code>,
+          the browser will ask you to grant this extension permission to talk to that origin.
+        </p>
+        <div class="row">
+          <button id="test-connection" class="btn btn--ghost">test connection</button>
+          <span id="connection-status" class="status"></span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Defaults</h2>
+        <p class="hint">Used by the popup, the floating in-page button, and the keyboard shortcut / right-click menu.</p>
+        <label class="field">
+          <span class="field-label">target model</span>
+          <select id="model-select"></select>
+        </label>
+        <label class="field">
+          <span class="field-label">preset</span>
+          <select id="preset-select"></select>
+        </label>
+        <label class="field" id="slider-field">
+          <span class="field-label">target reduction (custom preset)</span>
+          <div class="row">
+            <input id="target-slider" type="range" min="5" max="95" step="5" value="70" />
+            <span id="slider-value">70%</span>
+          </div>
+        </label>
+        <label class="field">
+          <span class="field-label">content type</span>
+          <select id="content-type-select"></select>
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>Enabled sites</h2>
+        <p class="hint">Turn off the floating "compress" button on any site without disabling the extension entirely.</p>
+        <div id="site-toggles" class="site-toggles"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Shortcuts</h2>
+        <p class="hint">
+          <code>Ctrl/Cmd+Shift+K</code> compresses the currently focused field.
+          <code>Ctrl/Cmd+Shift+L</code> opens this extension's popup.
+          Right-click any editable field or selection for "Compress with Context Compressor."
+          Manage or remap these at <code>chrome://extensions/shortcuts</code>.
+        </p>
+      </section>
+
+      <div id="saved-toast" class="saved-toast" hidden>saved</div>
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
