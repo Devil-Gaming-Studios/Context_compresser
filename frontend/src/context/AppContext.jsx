@@ -22,6 +22,15 @@ export function AppProvider({ children }) {
   const [diffLoading, setDiffLoading] = useState(false)
   const [diffError, setDiffError] = useState(null)
 
+  const [sessionExport, setSessionExport] = useState('')
+  const [sessionFileName, setSessionFileName] = useState('')
+  const [sessionProtectRecent, setSessionProtectRecent] = useState(4)
+  const [sessionTarget, setSessionTarget] = useState(0.70)
+  const [sessionDedupThreshold, setSessionDedupThreshold] = useState(0.9)
+  const [sessionResult, setSessionResult] = useState(null)
+  const [sessionLoading, setSessionLoading] = useState(false)
+  const [sessionError, setSessionError] = useState(null)
+
   const [presets, setPresets] = useState(null)
 
   const resetText = useCallback(() => {
@@ -43,6 +52,16 @@ export function AppProvider({ children }) {
     setDiffError(null)
   }, [])
 
+  const resetSession = useCallback(() => {
+    setSessionExport('')
+    setSessionFileName('')
+    setSessionProtectRecent(4)
+    setSessionTarget(0.70)
+    setSessionDedupThreshold(0.9)
+    setSessionResult(null)
+    setSessionError(null)
+  }, [])
+
   return (
     <AppContext.Provider
       value={{
@@ -62,8 +81,16 @@ export function AppProvider({ children }) {
         diffResult, setDiffResult,
         diffLoading, setDiffLoading,
         diffError, setDiffError,
+        sessionExport, setSessionExport,
+        sessionFileName, setSessionFileName,
+        sessionProtectRecent, setSessionProtectRecent,
+        sessionTarget, setSessionTarget,
+        sessionDedupThreshold, setSessionDedupThreshold,
+        sessionResult, setSessionResult,
+        sessionLoading, setSessionLoading,
+        sessionError, setSessionError,
         presets, setPresets,
-        resetText, resetDiff,
+        resetText, resetDiff, resetSession,
       }}
     >
       {children}

@@ -35,6 +35,19 @@ export default function Header() {
               </ol>
             </div>
           </a>
+          <a href="/context-compressor-0.1.0.vsix" download className="ext-download" title="Download VS Code extension">
+            <span className="ext-icon">⬇</span>
+            <span className="ext-label">VS Code</span>
+            <div className="ext-tooltip glass-strong">
+              <p className="ext-tooltip-title">Install the VS Code extension</p>
+              <ol className="ext-tooltip-steps">
+                <li>Open the <strong>Extensions</strong> view in VS Code</li>
+                <li>Click the <strong>…</strong> menu at the top</li>
+                <li>Select <strong>Install from VSIX…</strong></li>
+                <li>Choose the downloaded <code>.vsix</code> file</li>
+              </ol>
+            </div>
+          </a>
         </div>
 
         <nav className="header-nav">

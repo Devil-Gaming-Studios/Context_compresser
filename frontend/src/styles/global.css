@@ -428,6 +428,12 @@ body {
 }
 
 /* Extension download */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .ext-download {
   display: inline-flex;
   align-items: center;
@@ -1022,6 +1028,37 @@ body {
 .file-result-card summary .file-meta {
   color: var(--color-text-tertiary);
   font-size: 11px;
+}
+
+.turn-role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  margin-right: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--color-glass-strong);
+  color: var(--color-text-secondary);
+}
+
+.turn-role-badge.role-user { color: var(--color-secondary-light); }
+.turn-role-badge.role-assistant { color: var(--color-primary-light); }
+.turn-role-badge.role-system { color: var(--color-accent-light); }
+
+.turn-action-badge {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.turn-action-badge.action-protected_system,
+.turn-action-badge.action-protected_recent { color: var(--color-success); }
+.turn-action-badge.action-compressed { color: var(--color-text-secondary); }
+.turn-action-badge.action-dropped_duplicate { color: var(--color-danger); }
+
+.input-number {
+  max-width: 100px;
 }
 
 .file-stats {

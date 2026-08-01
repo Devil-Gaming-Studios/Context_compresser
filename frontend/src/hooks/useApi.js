@@ -67,6 +67,10 @@ export async function compressDiffGithub(payload) {
   return api('/compress/diff/github', { method: 'POST', body: JSON.stringify(payload) })
 }
 
+export async function compressSession(payload) {
+  return api('/compress/session', { method: 'POST', body: JSON.stringify(payload) })
+}
+
 export function useScrollReveal() {
   const ref = useRef(null)
 
