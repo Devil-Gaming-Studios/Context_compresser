@@ -1,64 +1,80 @@
-import { useEffect, useState } from 'react'
-import { useStats } from '../hooks/useApi.js'
+import { useNavigate } from 'react-router-dom'
 
-export default function Home({ onNavigate }) {
-  const { data: stats, loading } = useStats()
+export default function Home() {
+  const navigate = useNavigate()
 
   return (
     <div className="page home-page">
-      <header className="page-header">
-        <h1>Dashboard</h1>
-        <p className="subtitle">Overview of your compression workspace</p>
-      </header>
-
-      <div className="card-grid">
-        <div className="card action-card" onClick={() => onNavigate('compress')}>
-          <div className="card-icon">◉</div>
-          <h3>New Compression</h3>
-          <p>Start a new context compression session</p>
-          <span className="card-action">Open →</span>
-        </div>
-
-        <div className="card action-card" onClick={() => onNavigate('history')}>
-          <div className="card-icon">◷</div>
-          <h3>History</h3>
-          <p>View past compression jobs and results</p>
-          <span className="card-action">Open →</span>
-        </div>
-
-        <div className="card action-card" onClick={() => onNavigate('settings')}>
-          <div className="card-icon">◎</div>
-          <h3>Settings</h3>
-          <p>Configure backend endpoints and preferences</p>
-          <span className="card-action">Open →</span>
-        </div>
-      </div>
-
-      <div className="card stats-card">
-        <h3>Live Stats</h3>
-        {loading ? (
-          <div className="skeleton-row" />
-        ) : (
-          <div className="stats-row">
-            <div className="stat">
-              <span className="stat-value">{stats?.totalJobs ?? 0}</span>
-              <span className="stat-label">Total Jobs</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value">{stats?.compressed ?? 0}</span>
-              <span className="stat-label">Compressed</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value">{stats?.savedBytes ?? '0 B'}</span>
-              <span className="stat-label">Saved</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value">{stats?.avgRatio ?? '0%'}</span>
-              <span className="stat-label">Avg Ratio</span>
-            </div>
+      <section className="hero">
+        <h1 className="hero-title">
+          Strip repetitive syntax and filler from long contexts
+          <br />
+          <span className="hero-accent">before they hit the model</span>
+        </h1>
+        <div className="hero-stats">
+          <div className="hero-stat">
+            <span className="hero-stat-value">&gt;70%</span>
+            <span className="hero-stat-label">size reduction</span>
           </div>
-        )}
-      </div>
+          <div className="hero-stat">
+            <span className="hero-stat-value">95%+</span>
+            <span className="hero-stat-label">accuracy retention</span>
+          </div>
+        </div>
+        <div className="hero-ctas">
+          <button className="btn-primary" onClick={() => navigate('/app')}>
+            Start compressing →
+          </button>
+          <button className="btn-ghost" onClick={() => navigate('/docs')}>
+            How it works
+          </button>
+        </div>
+      </section>
+
+      <section className="feature-grid">
+        <div className="feature-card">
+          <div className="feature-icon">⊜</div>
+          <h3>Semantic deduplication</h3>
+          <p>TF-IDF near-duplicate removal eliminates repeated boilerplate across chunks without losing unique signal.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">⊟</div>
+          <h3>Structural stripping</h3>
+          <p>Collapses redundant structural lines — imports, closing braces, decorative comments — while preserving semantics.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">⊡</div>
+          <h3>Dependency-aware chunking</h3>
+          <p>Never drops a function another kept block still calls. The compressor builds a dependency graph before cutting.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">⊞</div>
+          <h3>Diff-aware PR compression</h3>
+          <p>Compresses GitHub PR diffs by keeping changed blocks and restoring only the dependencies they touch.</p>
+        </div>
+      </section>
+
+      <section className="metrics-section">
+        <h2>Evaluation metrics</h2>
+        <div className="metrics-grid">
+          <div className="metric">
+            <span className="metric-name">Compression ratio</span>
+            <span className="metric-desc">How much smaller the output is versus the input, measured in tokens.</span>
+          </div>
+          <div className="metric">
+            <span className="metric-name">Cost reduction</span>
+            <span className="metric-desc">Estimated API cost savings based on the target model's per-token pricing.</span>
+          </div>
+          <div className="metric">
+            <span className="metric-name">Accuracy retention</span>
+            <span className="metric-desc">Structural and semantic fidelity score. Real downstream LLM eval available via <code>eval_harness.py</code>.</span>
+          </div>
+          <div className="metric">
+            <span className="metric-name">Latency speedup</span>
+            <span className="metric-desc">Time saved on inference due to shorter prompt length.</span>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
