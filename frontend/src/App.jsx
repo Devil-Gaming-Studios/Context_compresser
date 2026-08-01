@@ -10,6 +10,13 @@ const CONTENT_TYPES = [
   { value: 'prose', label: 'prose' },
 ]
 
+const PRESETS = [
+  { value: 'custom', label: 'custom' },
+  { value: 'conservative', label: 'conservative' },
+  { value: 'balanced', label: 'balanced' },
+  { value: 'aggressive', label: 'aggressive' },
+]
+
 function StatBlock({ label, value, sublabel }) {
   return (
     <div className="stat-block">
@@ -75,6 +82,7 @@ function EmptyState() {
 export default function App() {
   const [text, setText] = useState('')
   const [contentType, setContentType] = useState('auto')
+  const [preset, setPreset] = useState('custom')
   const [targetCompression, setTargetCompression] = useState(70)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -96,8 +104,13 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
-          target_compression: targetCompression / 100,
           content_type: contentType,
+          preset: preset === 'custom' ? null : preset,
+          // When a preset is selected, let the backend use the preset's
+          // own target_compression unless the slider was moved after
+          // picking it -- always sending the slider value keeps things
+          // simple and predictable for the "custom" case.
+          target_compression: preset === 'custom' ? targetCompression / 100 : undefined,
         }),
       })
       if (!res.ok) {
@@ -113,7 +126,7 @@ export default function App() {
     } finally {
       setLoading(false)
     }
-  }, [text, targetCompression, contentType])
+  }, [text, targetCompression, contentType, preset])
 
   const handleFile = useCallback((file) => {
     if (!file) return
@@ -168,6 +181,24 @@ export default function App() {
             </div>
           </div>
 
+          <div className="panel-header">
+            <span className="panel-title">preset</span>
+            <div className="segmented" role="tablist" aria-label="Compression preset">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={preset === p.value}
+                  className={`segmented-btn ${preset === p.value ? 'segmented-btn--active' : ''}`}
+                  onClick={() => setPreset(p.value)}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div
             ref={dropRef}
             className="drop-zone"
@@ -199,8 +230,8 @@ export default function App() {
           <div className="control-row">
             <div className="slider-block">
               <div className="slider-label">
-                <span>target reduction</span>
-                <span className="slider-value">{targetCompression}%</span>
+                <span>{preset === 'custom' ? 'target reduction' : `target reduction (from "${preset}" preset)`}</span>
+                <span className="slider-value">{preset === 'custom' ? `${targetCompression}%` : ''}</span>
               </div>
               <input
                 type="range"
@@ -210,6 +241,7 @@ export default function App() {
                 value={targetCompression}
                 onChange={(e) => setTargetCompression(Number(e.target.value))}
                 className="slider"
+                disabled={preset !== 'custom'}
               />
             </div>
             <button

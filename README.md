@@ -54,6 +54,66 @@ print(report.summary())
 print(report.compressed_text)
 ```
 
+### Presets
+
+```python
+from context_compressor import ContextCompressor
+
+compressor = ContextCompressor.from_preset("aggressive")  # or "conservative" / "balanced"
+report = compressor.compress(text)
+```
+
+| preset | target reduction | dedup threshold | accuracy floor |
+|---|---|---|---|
+| `conservative` | 40% | 0.92 | 0.98 |
+| `balanced` (default) | 70% | 0.85 | 0.95 |
+| `aggressive` | 85% | 0.75 | 0.90 |
+
+### Code-aware chunking + dependency closure
+
+For code, the compressor doesn't just chunk by line. It groups Python
+source into logical blocks (functions/classes) via `ast`, and other
+languages into indentation-based blocks. It then builds a symbol table
+and runs a **dependency closure** pass: if a kept block still calls a
+helper defined elsewhere, that definition is force-kept even if its
+own TF-IDF score looked low. This avoids the common failure mode of
+extractive code compression -- dropping a one-line helper that's
+still called from code you kept, leaving behind code that references
+something that no longer exists in the output.
+
+```python
+compressor = ContextCompressor(use_code_blocks=True)  # default
+```
+
+### Multi-file / repository compression
+
+```python
+from context_compressor.multifile import compress_repo
+
+report = compress_repo("./my_project", target_compression=0.7)
+print(report.summary())
+for file_report in report.files:
+    print(file_report.path, file_report.original_tokens, "->", file_report.compressed_tokens)
+```
+
+This builds a **repo-wide symbol table** across all files, compresses
+each file against a shared token budget proportional to its size, then
+runs a cross-file dependency closure: if `app.py` still calls a helper
+defined in `utils.py`, that helper survives even if `utils.py`'s own
+local budget would have dropped it.
+
+### Other options
+
+```python
+compressor = ContextCompressor(
+    target_compression=0.70,
+    dedup_threshold=None,                 # None = adaptive per-document threshold instead of a fixed 0.85 cutoff
+    extra_filler_patterns=[r"^\s*MY_NOISE_TAG.*$"],  # extend the built-in filler-pattern list
+    model="claude",                       # tokenizer profile: "default" | "gpt-4" | "gpt-4o" | "gpt-3.5" | "claude" | "gemini"
+    summarize_log_blocks=True,            # collapse repeated multi-line log records (e.g. a stack trace firing 40x) into one + count
+)
+```
+
 ## Run the FastAPI + React app
 
 **Backend** (Python, serves the compression engine over HTTP):
@@ -74,11 +134,32 @@ backend at `http://localhost:8000` by default — copy `.env.example` to
 `.env` in `frontend/` to point it elsewhere.
 
 The UI: paste text or drop a file, pick a content type (or leave it on
-`auto`), set a target reduction with the slider, and run compression. You'll
-see token counts before/after, a compression bar, and a line-by-line diff —
-kept lines in green, removed lines struck through in rust.
+`auto`), pick a preset or set a custom target reduction with the slider,
+and run compression. You'll see token counts before/after, a compression
+bar, and a line-by-line diff — kept lines in green, removed lines struck
+through in rust.
+
+### API endpoints
+
+- `GET /health` — liveness check
+- `GET /presets` — list available presets and their settings
+- `POST /compress` — `{text, content_type, preset?, target_compression?, model?}`
+- `POST /compress/file` — same, as a multipart file upload
 
 ## Run the CLI (no server needed)
+
+```bash
+# single file
+python cli.py my_logs.txt --target 0.6 --content-type logs
+python cli.py app.py --preset aggressive --out compressed.py
+python cli.py app.py --report report.html   # export a shareable diff report (.md or .html)
+
+# whole repo/directory, with cross-file dependency awareness
+python cli.py --repo ./my_project --target 0.7 --out ./my_project_compressed
+```
+
+Run `python cli.py --help` for the full option list (presets, dedup
+threshold, tokenizer model, quiet mode, etc).
 
 ## Run the benchmark
 
@@ -87,6 +168,25 @@ pip install -r requirements.txt
 python benchmark.py                          # runs on sample_data/
 python benchmark.py my_file.txt --target 0.6  # run on your own file
 ```
+
+## Run the downstream-accuracy eval harness
+
+`benchmark.py` measures compression ratio offline. This measures the
+metric that actually requires a live model: whether answers to the
+same questions still agree after compression.
+
+```bash
+pip install anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+python eval_harness.py my_doc.txt --questions questions.json --target 0.7
+```
+
+`questions.json` is a JSON list of question strings. The harness asks
+each question against the original text and the compressed text via
+the Anthropic API, then uses a judge call to score whether the
+compressed-context answer agrees with the original-context answer, and
+reports an aggregate retention percentage. It requires a real API key
+and will not fabricate results without one.
 
 ## Run tests
 
@@ -99,41 +199,40 @@ python test_compressor.py
 - **Compression ratio** — measured directly (original vs. compressed token count)
 - **Cost / latency reduction** — proportional to compression ratio for API-billed models
 - **Reasoning-token retention** — approximated by the guardrail that boosts
-  scores for high-density, non-filler chunks and never drops critical-looking
+  scores for high-density, non-filler chunks, the dependency-closure pass
+  that keeps referenced code definitions, and never drops critical-looking
   lines (see `test_important_line_survives_compression`)
-
-## Honest limitation
-
-**Downstream answer-accuracy retention (the 95%+ target) is not measured
-here** — that requires running the same questions against both the original
-and compressed context through a real LLM and comparing answers. This repo
-gives you the compression engine; wiring it into an eval harness against
-the Anthropic API (ask N questions against full context, ask the same N
-against compressed context, compare answer quality) is the natural next
-step once you have an API key and a question set to test against.
+- **Downstream answer-accuracy retention** — measured directly via
+  `eval_harness.py` against the Anthropic API (requires an API key)
 
 ## Project structure
 
 ```
 context_compressor/
-├── context_compressor/    # the compression engine (importable package)
+├── context_compressor/         # the compression engine (importable package)
 │   ├── __init__.py
-│   ├── compressor.py       # main ContextCompressor class
-│   ├── boilerplate.py      # structural dedup (blank lines, repeated lines)
-│   ├── dedup.py             # TF-IDF semantic near-duplicate removal
-│   ├── scoring.py           # information-density scoring
-│   └── tokenizer.py         # token counting (tiktoken w/ fallback)
-├── backend/                # FastAPI server wrapping the engine
+│   ├── compressor.py            # main ContextCompressor class
+│   ├── boilerplate.py           # structural dedup (blank lines, repeated lines/blocks)
+│   ├── dedup.py                  # TF-IDF semantic near-duplicate removal (fixed or adaptive threshold)
+│   ├── scoring.py                # information-density scoring, configurable filler patterns
+│   ├── tokenizer.py              # token counting (tiktoken w/ fallback, model-aware profiles)
+│   ├── code_chunker.py           # AST/indentation block chunking + symbol table + dependency closure
+│   ├── presets.py                # conservative / balanced / aggressive presets
+│   ├── multifile.py              # repo-wide compression with cross-file dependency closure
+│   └── diff_export.py            # export a compression diff as Markdown/HTML
+├── backend/                     # FastAPI server wrapping the engine
 │   ├── main.py
 │   ├── requirements.txt
-│   └── context_compressor/  # copy of the engine package (self-contained)
-├── frontend/                # React + Vite UI
+│   └── context_compressor/       # copy of the engine package (self-contained)
+├── frontend/                    # React + Vite UI
 │   ├── src/App.jsx
 │   ├── src/App.css
 │   └── ...
 ├── sample_data/
 │   ├── sample_code.py
 │   └── sample_logs.txt
+├── cli.py                       # command-line interface (single file or --repo)
+├── eval_harness.py              # downstream answer-accuracy eval against the Anthropic API
 ├── benchmark.py
 ├── test_compressor.py
 └── requirements.txt

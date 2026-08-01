@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from context_compressor import ContextCompressor
+from context_compressor.presets import PRESETS
 
 app = FastAPI(title="Context Compressor API", version="1.0.0")
 
@@ -27,8 +28,11 @@ app.add_middleware(
 
 class CompressRequest(BaseModel):
     text: str = Field(..., min_length=1, description="Raw text to compress")
-    target_compression: float = Field(0.70, ge=0.05, le=0.98)
+    target_compression: Optional[float] = Field(None, ge=0.05, le=0.98,
+        description="Overrides the preset's target if provided")
     content_type: Literal["auto", "code", "logs", "prose"] = "auto"
+    preset: Optional[Literal["conservative", "balanced", "aggressive"]] = None
+    model: Literal["default", "gpt-4", "gpt-4o", "gpt-3.5", "claude", "gemini"] = "default"
 
 
 class DiffLineOut(BaseModel):
@@ -49,8 +53,23 @@ class CompressResponse(BaseModel):
     diff_lines: List[DiffLineOut]
 
 
-def _run_compression(text: str, target_compression: float, content_type: str) -> CompressResponse:
-    compressor = ContextCompressor(target_compression=target_compression)
+def _run_compression(
+    text: str,
+    target_compression: Optional[float],
+    content_type: str,
+    preset: Optional[str] = None,
+    model: str = "default",
+) -> CompressResponse:
+    if preset:
+        overrides = {"model": model}
+        if target_compression is not None:
+            overrides["target_compression"] = target_compression
+        compressor = ContextCompressor.from_preset(preset, **overrides)
+    else:
+        compressor = ContextCompressor(
+            target_compression=target_compression if target_compression is not None else 0.70,
+            model=model,
+        )
     report = compressor.compress(text, content_type=content_type)
     return CompressResponse(
         original_tokens=report.original_tokens,
@@ -71,18 +90,33 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/presets")
+def list_presets():
+    return {
+        name: {
+            "target_compression": p.target_compression,
+            "dedup_threshold": p.dedup_threshold,
+            "min_accuracy_floor": p.min_accuracy_floor,
+            "description": p.description,
+        }
+        for name, p in PRESETS.items()
+    }
+
+
 @app.post("/compress", response_model=CompressResponse)
 def compress(req: CompressRequest):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="text must not be empty")
-    return _run_compression(req.text, req.target_compression, req.content_type)
+    return _run_compression(req.text, req.target_compression, req.content_type, req.preset, req.model)
 
 
 @app.post("/compress/file", response_model=CompressResponse)
 async def compress_file(
     file: UploadFile = File(...),
-    target_compression: float = 0.70,
+    target_compression: Optional[float] = None,
     content_type: Optional[str] = "auto",
+    preset: Optional[str] = None,
+    model: str = "default",
 ):
     raw = await file.read()
     try:
@@ -91,4 +125,4 @@ async def compress_file(
         raise HTTPException(status_code=400, detail="file must be UTF-8 text")
     if not text.strip():
         raise HTTPException(status_code=400, detail="file is empty")
-    return _run_compression(text, target_compression, content_type or "auto")
+    return _run_compression(text, target_compression, content_type or "auto", preset, model)

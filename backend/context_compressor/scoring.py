@@ -10,15 +10,18 @@ This avoids any downloaded embedding model -- it's pure statistics over
 the document itself, so it works fully offline.
 """
 
-from typing import List
+from typing import List, Optional, Sequence
 import re
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Generic filler/boilerplate phrases that should never rank as "important"
-# even if they're statistically rare in a short document.
-_FILLER_PATTERNS = [
+# even if they're statistically rare in a short document. Callers can
+# extend or fully replace this list via `score_chunks(..., filler_patterns=...)`
+# / `ContextCompressor(extra_filler_patterns=[...])` for domain-specific
+# noise (e.g. a company's own heartbeat/health-check log format).
+DEFAULT_FILLER_PATTERNS = [
     r"^\s*#.*$",                      # bare comment-only lines (code)
     r"^\s*//.*$",
     r"^\s*(import|from)\s+\S+",       # import statements
@@ -27,21 +30,37 @@ _FILLER_PATTERNS = [
     r"^\s*(pass|continue|break)\s*$",
     r"^\s*(INFO|DEBUG)\b.*heartbeat.*$",
 ]
-_FILLER_RE = [re.compile(p, re.IGNORECASE) for p in _FILLER_PATTERNS]
 
 
-def _is_filler(chunk: str) -> bool:
-    return any(p.match(chunk) for p in _FILLER_RE)
+def _compile_filler(patterns: Sequence[str]):
+    return [re.compile(p, re.IGNORECASE) for p in patterns]
 
 
-def score_chunks(chunks: List[str]) -> np.ndarray:
+def _is_filler(chunk: str, filler_re) -> bool:
+    return any(p.match(chunk) for p in filler_re)
+
+
+def score_chunks(
+    chunks: List[str],
+    filler_patterns: Optional[Sequence[str]] = None,
+    force_keep: Optional[set] = None,
+) -> np.ndarray:
     """
     Return an information-density score per chunk (higher = keep).
 
     Score = TF-IDF mass of the chunk (sum of tf-idf weights of its terms),
     normalized by chunk length so long chunks don't win purely on size,
     then penalized if the chunk matches a known filler pattern.
+
+    filler_patterns: regex list overriding DEFAULT_FILLER_PATTERNS. Pass
+        None to use the defaults.
+    force_keep: set of chunk indices that should always score at the
+        maximum (1.0) regardless of TF-IDF/filler signals -- used for
+        code blocks that a dependency-closure pass determined are
+        referenced elsewhere and must survive selection.
     """
+    filler_re = _compile_filler(filler_patterns if filler_patterns is not None else DEFAULT_FILLER_PATTERNS)
+
     if len(chunks) == 0:
         return np.array([])
     if len(chunks) == 1:
@@ -69,12 +88,21 @@ def score_chunks(chunks: List[str]) -> np.ndarray:
 
     # Penalize filler-pattern chunks heavily
     for i, c in enumerate(chunks):
-        if _is_filler(c):
+        if _is_filler(c, filler_re):
             density[i] *= 0.1
 
     # Penalize near-empty chunks
     for i, c in enumerate(chunks):
         if len(c.strip()) < 3:
             density[i] = 0.0
+
+    # Force-keep overrides everything else -- these are chunks a
+    # dependency analysis determined are still referenced by other
+    # kept chunks (e.g. a helper function called elsewhere), so they
+    # must not be starved out by a low TF-IDF score.
+    if force_keep:
+        for i in force_keep:
+            if 0 <= i < len(density):
+                density[i] = 1.0
 
     return density
