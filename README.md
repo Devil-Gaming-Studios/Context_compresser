@@ -63,11 +63,11 @@ compressor = ContextCompressor.from_preset("aggressive")  # or "conservative" / 
 report = compressor.compress(text)
 ```
 
-| preset | target reduction | dedup threshold | accuracy floor |
-|---|---|---|---|
-| `conservative` | 40% | 0.92 | 0.98 |
-| `balanced` (default) | 70% | 0.85 | 0.95 |
-| `aggressive` | 85% | 0.75 | 0.90 |
+| preset               | target reduction | dedup threshold | accuracy floor |
+| -------------------- | ---------------- | --------------- | -------------- |
+| `conservative`       | 40%              | 0.92            | 0.98           |
+| `balanced` (default) | 70%              | 0.85            | 0.95           |
+| `aggressive`         | 85%              | 0.75            | 0.90           |
 
 ### Code-aware chunking + dependency closure
 
@@ -197,6 +197,7 @@ messages = report.to_messages()  # reconstructed [{"role", "content"}, ...] tran
 ## Run the FastAPI + React app
 
 **Backend** (Python, serves the compression engine over HTTP):
+
 ```bash
 cd backend
 pip install -r requirements.txt
@@ -204,11 +205,13 @@ uvicorn main:app --reload --port 8000
 ```
 
 **Frontend** (React + Vite):
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
 Open the URL Vite prints (usually `http://localhost:5173`). It talks to the
 backend at `http://localhost:8000` by default — copy `.env.example` to
 `.env` in `frontend/` to point it elsewhere.
@@ -218,6 +221,28 @@ The UI: paste text or drop a file, pick a content type (or leave it on
 and run compression. You'll see token counts before/after, a compression
 bar, and a line-by-line diff — kept lines in green, removed lines struck
 through in rust.
+
+Four tabs in the workspace:
+
+- **Text / Repo** — paste or drop a single file/blob and compress it
+- **Diff / PR** — paste a unified diff (or a GitHub PR URL) and compress
+  just the changed blocks + their dependencies
+- **Chat History** — paste or drop a ChatGPT/claude.ai/generic conversation
+  export (`.json`), set how many recent turns to protect verbatim and a
+  duplicate-turn threshold, and compress the rest. Results show a
+  per-turn breakdown (role, action taken, token counts) and a "Copy as
+  messages JSON" button that reconstructs a clean `[{role, content}, ...]`
+  transcript ready to feed back into an API call
+- **Presets & Models** — inspect the built-in presets and tokenizer profiles
+
+### Browser & editor extensions
+
+The header has one-click downloads for the browser extension
+(`.zip`, load unpacked into Chrome/Edge) and the VS Code extension
+(`.vsix`, install via **Extensions → … → Install from VSIX…**) — no
+need to build either from source. Both talk to the same backend as the
+web app and CLI; see `extension/README.md` and `extension-vscode/README.md`
+for what each one does.
 
 ### API endpoints
 
