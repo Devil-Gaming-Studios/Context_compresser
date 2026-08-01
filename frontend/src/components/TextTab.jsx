@@ -54,7 +54,7 @@ export default function TextTab() {
   return (
     <div className="tab-panel text-tab">
       <div className="workspace-columns">
-        <div className="column glass">
+        <div className="column glass glass-hover">
           <div className="panel-header">Input</div>
           <textarea className="code-input" placeholder="Paste your context here…" value={textInput} onChange={(e) => setTextInput(e.target.value)} spellCheck={false} />
           <div className="or-divider">or</div>
@@ -67,13 +67,13 @@ export default function TextTab() {
               <span>Target reduction {Math.round(textTarget * 100)}%</span>
               <input type="range" min={5} max={95} step={5} value={Math.round(textTarget * 100)} onChange={(e) => setTextTarget(Number(e.target.value) / 100)} disabled={!isCustom} />
             </label>
-            <button className="btn-primary btn-full" onClick={runCompress} disabled={textLoading || (!textInput.trim() && !textFile)}>
+            <button className="btn btn-primary btn-full" onClick={runCompress} disabled={textLoading || (!textInput.trim() && !textFile)}>
               {textLoading ? 'Compressing…' : 'Compress →'}
             </button>
             {textError && <div className="alert error">{textError}</div>}
           </div>
         </div>
-        <div className="column glass">
+        <div className="column glass glass-hover">
           <div className="panel-header">Output</div>
           {textResult ? (
             <div className="results-stack">
@@ -85,7 +85,7 @@ export default function TextTab() {
               ]} />
               <div className="bar-chart glass"><div className="bar-reduced" style={{ width: `${(textResult.compression_ratio ?? 0) * 100}%` }} /></div>
               <div className="result-actions">
-                <button className="btn-ghost" onClick={() => navigator.clipboard.writeText(textResult.compressed_text)}>Copy output</button>
+                <button className="btn btn-ghost" onClick={() => navigator.clipboard.writeText(textResult.compressed_text)}>Copy output</button>
               </div>
               <textarea className="code-input readonly" readOnly value={textResult.compressed_text ?? ''} />
               <DiffView lines={textResult.diff_lines} />

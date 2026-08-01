@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 
 const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
@@ -50,4 +50,26 @@ export async function compressDiff(payload) {
 
 export async function compressDiffGithub(payload) {
   return api('/compress/diff/github', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function useScrollReveal() {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('visible')
+          observer.unobserve(el)
+        }
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return ref
 }

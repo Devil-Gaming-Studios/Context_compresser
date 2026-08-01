@@ -1,11 +1,19 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext.jsx'
 
 export default function Header() {
   const { theme, toggle } = useTheme()
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
-    <header className="site-header glass">
+    <header className={`site-header glass-strong ${scrolled ? 'scrolled' : ''}`}>
       <div className="header-left">
         <NavLink to="/" className="header-brand">
           <span className="brand-logo">◈</span>
@@ -13,12 +21,7 @@ export default function Header() {
         </NavLink>
 
         <div className="header-actions">
-          <a
-            href="/context-compressor-extension.zip"
-            download
-            className="ext-download"
-            title="Download browser extension"
-          >
+          <a href="/context-compressor-extension.zip" download className="ext-download" title="Download browser extension">
             <span className="ext-icon">⬇</span>
             <span className="ext-label">Extension</span>
             <div className="ext-tooltip glass-strong">

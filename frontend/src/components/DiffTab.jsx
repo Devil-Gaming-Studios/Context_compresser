@@ -52,7 +52,7 @@ export default function DiffTab() {
   return (
     <div className="tab-panel diff-tab">
       <div className="workspace-columns">
-        <div className="column glass">
+        <div className="column glass glass-hover">
           <div className="panel-header">Diff Input</div>
           <div className="diff-mode-toggle">
             <button className={`seg-btn ${diffMode === 'manual' ? 'active' : ''}`} onClick={() => setDiffMode('manual')}>Manual diff</button>
@@ -77,16 +77,16 @@ export default function DiffTab() {
             </>
           ) : (
             <div className="github-input">
-              <input className="text-input glass" type="text" placeholder="https://github.com/owner/repo/pull/123" value={diffPrUrl} onChange={(e) => setDiffPrUrl(e.target.value)} />
+              <input className="input-glass" type="text" placeholder="https://github.com/owner/repo/pull/123" value={diffPrUrl} onChange={(e) => setDiffPrUrl(e.target.value)} />
               <p className="hint">Paste a public PR URL and we'll fetch the diff for you.</p>
             </div>
           )}
-          <button className="btn-primary btn-full" onClick={runCompress} disabled={diffLoading || (diffMode === 'manual' ? (!diffText.trim() || !allFilesProvided) : !diffPrUrl.trim())}>
+          <button className="btn btn-primary btn-full" onClick={runCompress} disabled={diffLoading || (diffMode === 'manual' ? (!diffText.trim() || !allFilesProvided) : !diffPrUrl.trim())}>
             {diffLoading ? 'Compressing…' : 'Compress →'}
           </button>
           {diffError && <div className="alert error">{diffError}</div>}
         </div>
-        <div className="column glass">
+        <div className="column glass glass-hover">
           <div className="panel-header">Output</div>
           {diffResult ? (
             <div className="results-stack">
@@ -101,7 +101,7 @@ export default function DiffTab() {
               )}
               <div className="file-results">
                 {diffResult.files?.map((file) => (
-                  <details key={file.path} className="file-result-card glass">
+                  <details key={file.path} className="file-result-card glass glass-hover">
                     <summary><span className="file-path">{file.path}</span><span className="file-meta">{file.original_tokens} → {file.compressed_tokens} tokens</span></summary>
                     <div className="file-stats"><span>changed: {file.changed_blocks_kept}</span><span>context: {file.context_blocks_kept}</span><span>deps restored: {file.dependency_blocks_restored}</span><span>total: {file.blocks_total}</span></div>
                     <DiffView lines={file.diff_lines} />

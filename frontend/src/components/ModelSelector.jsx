@@ -12,15 +12,11 @@ const MODELS = [
 export default function ModelSelector() {
   const { model, setModel } = useApp()
   return (
-    <div className="model-selector glass-pill">
+    <div className="model-selector">
       <span className="model-label">Model</span>
       <div className="segmented">
         {MODELS.map((m) => (
-          <button
-            key={m.value}
-            className={`seg-btn ${model === m.value ? 'active' : ''}`}
-            onClick={() => setModel(m.value)}
-          >
+          <button key={m.value} className={`seg-btn ${model === m.value ? 'active' : ''}`} onClick={() => setModel(m.value)}>
             {m.label}
           </button>
         ))}
