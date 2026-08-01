@@ -7,12 +7,17 @@ Run with:
 
 from typing import Dict, List, Literal, Optional
 
+from dotenv import load_dotenv
+
+load_dotenv()  # reads backend/.env (e.g. GITHUB_TOKEN) into the process env, if present
+
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from context_compressor import ContextCompressor
 from context_compressor.git_diff import compress_diff
+from context_compressor.github_fetch import fetch_pr_diff_and_files, parse_pr_reference
 from context_compressor.presets import PRESETS
 
 app = FastAPI(title="Context Compressor API", version="1.0.0")
@@ -117,6 +122,38 @@ class DiffCompressResponse(BaseModel):
     notes: List[str]
 
 
+class GithubPrCompressRequest(BaseModel):
+    pr: str = Field(
+        ..., description="GitHub PR URL (https://github.com/owner/repo/pull/123) or shorthand owner/repo#123"
+    )
+    target_compression: Optional[float] = Field(None, ge=0.05, le=0.98)
+    model: Literal["default", "gpt-4", "gpt-4o", "gpt-3.5", "claude", "gemini"] = "default"
+
+
+def _to_diff_response(report) -> DiffCompressResponse:
+    return DiffCompressResponse(
+        files=[
+            DiffFileReportOut(
+                path=f.path,
+                original_tokens=f.original_tokens,
+                compressed_tokens=f.compressed_tokens,
+                compressed_text=f.compressed_text,
+                changed_blocks_kept=f.changed_blocks_kept,
+                context_blocks_kept=f.context_blocks_kept,
+                dependency_blocks_restored=f.dependency_blocks_restored,
+                blocks_total=f.blocks_total,
+                diff_lines=[DiffLineOut(text=d.text, kept=d.kept) for d in f.diff_lines],
+            )
+            for f in report.files
+        ],
+        original_tokens=report.original_tokens,
+        compressed_tokens=report.compressed_tokens,
+        compression_ratio=report.compression_ratio,
+        files_skipped=report.files_skipped,
+        notes=report.notes,
+    )
+
+
 @app.post("/compress/diff", response_model=DiffCompressResponse)
 def compress_diff_endpoint(req: DiffCompressRequest):
     """
@@ -140,27 +177,39 @@ def compress_diff_endpoint(req: DiffCompressRequest):
     if not report.files and not report.files_skipped:
         raise HTTPException(status_code=400, detail="diff_text contained no parseable file changes")
 
-    return DiffCompressResponse(
-        files=[
-            DiffFileReportOut(
-                path=f.path,
-                original_tokens=f.original_tokens,
-                compressed_tokens=f.compressed_tokens,
-                compressed_text=f.compressed_text,
-                changed_blocks_kept=f.changed_blocks_kept,
-                context_blocks_kept=f.context_blocks_kept,
-                dependency_blocks_restored=f.dependency_blocks_restored,
-                blocks_total=f.blocks_total,
-                diff_lines=[DiffLineOut(text=d.text, kept=d.kept) for d in f.diff_lines],
-            )
-            for f in report.files
-        ],
-        original_tokens=report.original_tokens,
-        compressed_tokens=report.compressed_tokens,
-        compression_ratio=report.compression_ratio,
-        files_skipped=report.files_skipped,
-        notes=report.notes,
-    )
+    return _to_diff_response(report)
+
+
+@app.post("/compress/diff/github", response_model=DiffCompressResponse)
+def compress_diff_github_endpoint(req: GithubPrCompressRequest):
+    """
+    Same as /compress/diff, but the server fetches the diff and file
+    contents itself from a GitHub PR URL -- no OAuth, no connected
+    account, just an unauthenticated (or GITHUB_TOKEN-authenticated)
+    call to the public GitHub REST API. Only works for PRs the server
+    can read anonymously (public repos), unless GITHUB_TOKEN is set in
+    its environment.
+    """
+    try:
+        owner, repo, pr_number = parse_pr_reference(req.pr)
+        diff_text, file_contents = fetch_pr_diff_and_files(owner, repo, pr_number)
+    except (ValueError, RuntimeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    try:
+        report = compress_diff(
+            diff_text=diff_text,
+            file_contents=file_contents,
+            target_compression=req.target_compression if req.target_compression is not None else 0.70,
+            model=req.model,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not report.files and not report.files_skipped:
+        raise HTTPException(status_code=400, detail="PR diff contained no parseable file changes")
+
+    return _to_diff_response(report)
 
 
 @app.get("/health")

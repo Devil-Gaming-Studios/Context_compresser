@@ -134,8 +134,32 @@ for f in report.files:
 This is a heuristic diff-touched-block detector, not a `git blame`-level
 tool — it doesn't reach outside the diff's own changed files for
 dependencies (a symbol defined in a file the diff never touches won't
-be pulled in). No GitHub API or network access is used or required;
-point it at a local repo or hand it a diff + file contents yourself.
+be pulled in). `compress_diff` itself still makes no GitHub API or
+network calls; point it at a local repo or hand it a diff + file
+contents yourself.
+
+#### Option C: point it at a GitHub PR and let it fetch (`github_fetch`)
+
+If you don't want to download the `.diff` and every changed file by
+hand, `github_fetch` does that step for you and feeds the result
+straight into `compress_diff`:
+
+```python
+from context_compressor.github_fetch import fetch_pr_diff_and_files, parse_pr_reference
+from context_compressor.git_diff import compress_diff
+
+owner, repo, pr_number = parse_pr_reference("https://github.com/owner/repo/pull/123")
+diff_text, file_contents = fetch_pr_diff_and_files(owner, repo, pr_number)
+report = compress_diff(diff_text=diff_text, file_contents=file_contents)
+```
+
+This is a plain, unauthenticated call to GitHub's public REST API and
+`raw.githubusercontent.com` (stdlib `urllib`, no new dependency) — **not**
+an OAuth "connect your account" flow, and it doesn't browse repos or list
+PRs for you; you still give it one PR reference. It works out of the box
+for public repos (capped at 60 requests/hour per IP by GitHub); set the
+`GITHUB_TOKEN` env var to a personal access token to reach private repos
+or raise that limit to 5000/hour.
 
 ### Other options
 
@@ -181,6 +205,7 @@ through in rust.
 - `POST /compress` — `{text, content_type, preset?, target_compression?, model?}`
 - `POST /compress/file` — same, as a multipart file upload
 - `POST /compress/diff` — `{diff_text, file_contents, target_compression?, model?}` — diff-aware compression (see below)
+- `POST /compress/diff/github` — `{pr, target_compression?, model?}` — same, but fetches the diff + file contents itself from a GitHub PR URL (public repos out of the box; set `GITHUB_TOKEN` server-side for private repos / a higher rate limit)
 
 ## Run the CLI (no server needed)
 
@@ -199,6 +224,11 @@ python cli.py --repo ./my_project --diff HEAD~1 --target 0.5
 # diff-aware from a standalone diff file (e.g. a downloaded GitHub PR .diff),
 # with --repo pointing at a checkout containing the new file contents
 python cli.py --repo ./my_project --diff-file pr123.diff --target 0.5
+
+# diff-aware straight from a GitHub PR -- fetches the diff + file contents itself,
+# no local checkout needed (public repos work out of the box; set GITHUB_TOKEN
+# for private repos or a higher rate limit)
+python cli.py --github-pr https://github.com/owner/repo/pull/123 --target 0.5
 ```
 
 Run `python cli.py --help` for the full option list (presets, dedup
@@ -263,6 +293,7 @@ context_compressor/
 │   ├── presets.py                # conservative / balanced / aggressive presets
 │   ├── multifile.py              # repo-wide compression with cross-file dependency closure
 │   ├── git_diff.py                # diff-aware compression: compress only what a diff touches + needed context
+│   ├── github_fetch.py            # fetch a GitHub PR's diff + changed files via the public REST API (no OAuth)
 │   └── diff_export.py            # export a compression diff as Markdown/HTML
 ├── backend/                     # FastAPI server wrapping the engine
 │   ├── main.py

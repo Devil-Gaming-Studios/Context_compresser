@@ -17,6 +17,10 @@ Examples:
 import argparse
 import sys
 
+from dotenv import load_dotenv
+
+load_dotenv()  # reads a .env file (e.g. GITHUB_TOKEN) from the current or a parent directory, if present
+
 from context_compressor import ContextCompressor
 from context_compressor.diff_export import write_report
 from context_compressor.presets import PRESETS
@@ -38,6 +42,12 @@ def build_parser() -> argparse.ArgumentParser:
                          help="Diff-aware mode from a standalone unified diff file (e.g. a GitHub PR's .diff URL "
                               "downloaded to disk) instead of running git. Requires --repo to point at a checkout "
                               "containing the new (post-change) file contents.")
+    parser.add_argument("--github-pr", metavar="PR",
+                         help="Diff-aware mode, fetched automatically: a GitHub PR URL "
+                              "(https://github.com/owner/repo/pull/123) or shorthand owner/repo#123. Fetches the "
+                              "diff and changed-file contents itself via the public GitHub API -- no git repo, no "
+                              "OAuth. Public repos work out of the box; set GITHUB_TOKEN for private repos or a "
+                              "higher rate limit.")
     parser.add_argument("--target", type=float, default=None, help="Fraction of tokens to remove, e.g. 0.7 (default: 0.70, or the preset's value)")
     parser.add_argument("--content-type", choices=["auto", "code", "logs", "prose"], default="auto")
     parser.add_argument("--preset", choices=list(PRESETS), default=None, help="Named preset bundling target/dedup/floor settings")
@@ -132,7 +142,15 @@ def _run_diff(args) -> int:
     repo_path = args.repo or "."
 
     try:
-        if args.diff_file:
+        if args.github_pr:
+            from context_compressor.github_fetch import fetch_pr_diff_and_files, parse_pr_reference
+
+            owner, repo, pr_number = parse_pr_reference(args.github_pr)
+            diff_text, file_contents = fetch_pr_diff_and_files(owner, repo, pr_number)
+            report = compress_diff(
+                diff_text=diff_text, file_contents=file_contents, target_compression=target, model=args.model,
+            )
+        elif args.diff_file:
             with open(args.diff_file, "r", encoding="utf-8", errors="ignore") as f:
                 diff_text = f.read()
             report = compress_diff(
@@ -183,14 +201,17 @@ def main(argv=None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if not args.file and not args.repo and not args.diff and not args.diff_file:
+    if not args.file and not args.repo and not args.diff and not args.diff_file and not args.github_pr:
         parser.print_help()
         return 1
-    if args.file and (args.repo or args.diff or args.diff_file):
-        print("error: pass either a single FILE, --repo DIR, or --diff/--diff-file, not a mix", file=sys.stderr)
+    if args.file and (args.repo or args.diff or args.diff_file or args.github_pr):
+        print("error: pass either a single FILE, --repo DIR, or --diff/--diff-file/--github-pr, not a mix", file=sys.stderr)
+        return 1
+    if args.github_pr and args.repo:
+        print("error: --github-pr fetches its own file contents, don't pass --repo with it", file=sys.stderr)
         return 1
 
-    if args.diff or args.diff_file:
+    if args.diff or args.diff_file or args.github_pr:
         return _run_diff(args)
     if args.repo:
         return _run_repo(args)
