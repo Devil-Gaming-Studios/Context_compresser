@@ -6,15 +6,27 @@ export default function Background() {
   const orb3 = useRef(null)
 
   useEffect(() => {
+    let rafId = null
+    let pendingX = 0
+    let pendingY = 0
+
+    const applyTransform = () => {
+      rafId = null
+      if (orb1.current) orb1.current.style.transform = `translate(${pendingX}px, ${pendingY}px)`
+      if (orb2.current) orb2.current.style.transform = `translate(${-pendingX * 0.8}px, ${-pendingY * 0.8}px)`
+      if (orb3.current) orb3.current.style.transform = `translate(${pendingX * 0.5}px, ${pendingY * 0.5}px)`
+    }
+
     const onMouseMove = (e) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 20
-      const y = (e.clientY / window.innerHeight - 0.5) * 20
-      if (orb1.current) orb1.current.style.transform = `translate(${x}px, ${y}px)`
-      if (orb2.current) orb2.current.style.transform = `translate(${-x * 0.8}px, ${-y * 0.8}px)`
-      if (orb3.current) orb3.current.style.transform = `translate(${x * 0.5}px, ${y * 0.5}px)`
+      pendingX = (e.clientX / window.innerWidth - 0.5) * 20
+      pendingY = (e.clientY / window.innerHeight - 0.5) * 20
+      if (rafId === null) rafId = requestAnimationFrame(applyTransform)
     }
     window.addEventListener('mousemove', onMouseMove, { passive: true })
-    return () => window.removeEventListener('mousemove', onMouseMove)
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      if (rafId !== null) cancelAnimationFrame(rafId)
+    }
   }, [])
 
   return (
