@@ -102,6 +102,41 @@ runs a cross-file dependency closure: if `app.py` still calls a helper
 defined in `utils.py`, that helper survives even if `utils.py`'s own
 local budget would have dropped it.
 
+### Diff-aware compression (compress just a PR/commit)
+
+Compressing a whole file (or repo) is the wrong unit of work when what
+you actually want is "give the model enough context to review this
+change." `compress_diff` parses a unified diff, force-keeps every
+logical block the diff touches, restores any symbol those blocks still
+depend on (including across files — e.g. an edited function in `app.py`
+calling an untouched helper in `utils.py`), and fills whatever budget
+is left with the highest-value surrounding context.
+
+```python
+from context_compressor.git_diff import compress_diff
+
+# Option A: local git repo -- shells out to `git diff` / `git show` itself
+report = compress_diff(repo_path="./my_project", base_ref="HEAD~1")
+
+# Option B: bring your own diff (e.g. downloaded from a GitHub PR's
+# `.diff` URL) -- no git repo or network access needed on this end
+report = compress_diff(
+    diff_text=raw_diff_text,
+    file_contents={"app.py": "...full new source of app.py...", "utils.py": "..."},
+)
+
+print(report.summary())
+for f in report.files:
+    print(f.path, f.original_tokens, "->", f.compressed_tokens,
+          f"({f.changed_blocks_kept} changed, {f.dependency_blocks_restored} dependency-restored)")
+```
+
+This is a heuristic diff-touched-block detector, not a `git blame`-level
+tool — it doesn't reach outside the diff's own changed files for
+dependencies (a symbol defined in a file the diff never touches won't
+be pulled in). No GitHub API or network access is used or required;
+point it at a local repo or hand it a diff + file contents yourself.
+
 ### Other options
 
 ```python
@@ -145,6 +180,7 @@ through in rust.
 - `GET /presets` — list available presets and their settings
 - `POST /compress` — `{text, content_type, preset?, target_compression?, model?}`
 - `POST /compress/file` — same, as a multipart file upload
+- `POST /compress/diff` — `{diff_text, file_contents, target_compression?, model?}` — diff-aware compression (see below)
 
 ## Run the CLI (no server needed)
 
@@ -156,6 +192,13 @@ python cli.py app.py --report report.html   # export a shareable diff report (.m
 
 # whole repo/directory, with cross-file dependency awareness
 python cli.py --repo ./my_project --target 0.7 --out ./my_project_compressed
+
+# diff-aware: compress only what changed vs a git ref, plus needed context
+python cli.py --repo ./my_project --diff HEAD~1 --target 0.5
+
+# diff-aware from a standalone diff file (e.g. a downloaded GitHub PR .diff),
+# with --repo pointing at a checkout containing the new file contents
+python cli.py --repo ./my_project --diff-file pr123.diff --target 0.5
 ```
 
 Run `python cli.py --help` for the full option list (presets, dedup
@@ -219,6 +262,7 @@ context_compressor/
 │   ├── code_chunker.py           # AST/indentation block chunking + symbol table + dependency closure
 │   ├── presets.py                # conservative / balanced / aggressive presets
 │   ├── multifile.py              # repo-wide compression with cross-file dependency closure
+│   ├── git_diff.py                # diff-aware compression: compress only what a diff touches + needed context
 │   └── diff_export.py            # export a compression diff as Markdown/HTML
 ├── backend/                     # FastAPI server wrapping the engine
 │   ├── main.py

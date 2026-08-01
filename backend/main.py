@@ -5,13 +5,14 @@ Run with:
     uvicorn main:app --reload --port 8000
 """
 
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from context_compressor import ContextCompressor
+from context_compressor.git_diff import compress_diff
 from context_compressor.presets import PRESETS
 
 app = FastAPI(title="Context Compressor API", version="1.0.0")
@@ -82,6 +83,83 @@ def _run_compression(
         compressed_text=report.compressed_text,
         notes=report.notes,
         diff_lines=[DiffLineOut(text=d.text, kept=d.kept) for d in report.diff_lines],
+    )
+
+
+class DiffCompressRequest(BaseModel):
+    diff_text: str = Field(..., min_length=1, description="Raw unified diff, e.g. from `git diff` or a GitHub PR's .diff URL")
+    file_contents: Dict[str, str] = Field(
+        ..., description="Map of changed file path -> full NEW file content (post-change). "
+                          "Keys should match the diff's '+++ b/...' paths (with or without the 'b/' prefix)."
+    )
+    target_compression: Optional[float] = Field(None, ge=0.05, le=0.98)
+    model: Literal["default", "gpt-4", "gpt-4o", "gpt-3.5", "claude", "gemini"] = "default"
+
+
+class DiffFileReportOut(BaseModel):
+    path: str
+    original_tokens: int
+    compressed_tokens: int
+    compressed_text: str
+    changed_blocks_kept: int
+    context_blocks_kept: int
+    dependency_blocks_restored: int
+    blocks_total: int
+    diff_lines: List[DiffLineOut]
+
+
+class DiffCompressResponse(BaseModel):
+    files: List[DiffFileReportOut]
+    original_tokens: int
+    compressed_tokens: int
+    compression_ratio: float
+    files_skipped: List[str]
+    notes: List[str]
+
+
+@app.post("/compress/diff", response_model=DiffCompressResponse)
+def compress_diff_endpoint(req: DiffCompressRequest):
+    """
+    Diff-aware compression: given a unified diff plus the new content of
+    each changed file, keep every block the diff actually touches, pull
+    in whatever it depends on, and fill any remaining budget with the
+    highest-value surrounding context. No git repo or GitHub access is
+    needed server-side -- the caller supplies the diff and file contents
+    (e.g. fetched from a GitHub PR's .diff URL and the repo checkout).
+    """
+    try:
+        report = compress_diff(
+            diff_text=req.diff_text,
+            file_contents=req.file_contents,
+            target_compression=req.target_compression if req.target_compression is not None else 0.70,
+            model=req.model,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not report.files and not report.files_skipped:
+        raise HTTPException(status_code=400, detail="diff_text contained no parseable file changes")
+
+    return DiffCompressResponse(
+        files=[
+            DiffFileReportOut(
+                path=f.path,
+                original_tokens=f.original_tokens,
+                compressed_tokens=f.compressed_tokens,
+                compressed_text=f.compressed_text,
+                changed_blocks_kept=f.changed_blocks_kept,
+                context_blocks_kept=f.context_blocks_kept,
+                dependency_blocks_restored=f.dependency_blocks_restored,
+                blocks_total=f.blocks_total,
+                diff_lines=[DiffLineOut(text=d.text, kept=d.kept) for d in f.diff_lines],
+            )
+            for f in report.files
+        ],
+        original_tokens=report.original_tokens,
+        compressed_tokens=report.compressed_tokens,
+        compression_ratio=report.compression_ratio,
+        files_skipped=report.files_skipped,
+        notes=report.notes,
     )
 
 

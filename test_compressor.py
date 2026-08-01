@@ -10,6 +10,7 @@ from context_compressor.presets import PRESETS, get_preset
 from context_compressor.tokenizer import count_tokens
 from context_compressor.boilerplate import summarize_repeated_blocks
 from context_compressor.dedup import remove_near_duplicates, adaptive_threshold
+from context_compressor.git_diff import parse_unified_diff, compress_diff
 
 
 def test_repeated_log_lines_collapse():
@@ -138,6 +139,78 @@ def test_repeated_log_block_summarized():
     print("PASS: repeated multi-line log block gets summarized")
 
 
+_SAMPLE_DIFF = """diff --git a/app.py b/app.py
+index 111..222 100644
+--- a/app.py
++++ b/app.py
+@@ -1,6 +1,7 @@
+ import utils
+
+
+-def compute_total(items):
++def compute_total(items, discount=0):
+     total = 0
+     for item in items:
+         total = utils.add(total, item)
++    total = utils.apply_discount(total, discount)
+     return total
+diff --git a/utils.py b/utils.py
+index 333..444 100644
+--- a/utils.py
++++ b/utils.py
+@@ -6,3 +6,7 @@ def add(a, b):
+ def unrelated_helper(x):
+     return x
++
++
++def apply_discount(total, discount):
++    return total * (1 - discount)
+"""
+
+_APP_PY_NEW = (
+    "import utils\n\n\n"
+    "def compute_total(items, discount=0):\n"
+    "    total = 0\n"
+    "    for item in items:\n"
+    "        total = utils.add(total, item)\n"
+    "    total = utils.apply_discount(total, discount)\n"
+    "    return total\n"
+)
+
+_UTILS_PY_NEW = (
+    "def add(a, b):\n"
+    "    return a + b\n\n\n"
+    "def unrelated_helper(x):\n"
+    "    return x\n\n\n"
+    "def apply_discount(total, discount):\n"
+    "    return total * (1 - discount)\n"
+)
+
+
+def test_parse_unified_diff_finds_hunks_per_file():
+    parsed = parse_unified_diff(_SAMPLE_DIFF)
+    assert set(parsed.keys()) == {"app.py", "utils.py"}
+    assert len(parsed["app.py"]) == 1
+    assert len(parsed["utils.py"]) == 1
+    print("PASS: unified diff parsing finds hunks for each changed file")
+
+
+def test_compress_diff_keeps_changed_and_cross_file_dependency():
+    report = compress_diff(
+        diff_text=_SAMPLE_DIFF,
+        file_contents={"app.py": _APP_PY_NEW, "utils.py": _UTILS_PY_NEW},
+        target_compression=0.5,
+    )
+    by_path = {f.path: f for f in report.files}
+    assert "compute_total" in by_path["app.py"].compressed_text
+    assert "apply_discount" in by_path["utils.py"].compressed_text
+    # `add` isn't touched by the diff at all, but app.py's changed block
+    # still calls utils.add -- cross-file closure must pull it back in.
+    assert "def add(" in by_path["utils.py"].compressed_text
+    assert by_path["utils.py"].dependency_blocks_restored >= 1
+    print("PASS: diff-aware compression keeps changed blocks and restores cross-file dependency")
+
+
 if __name__ == "__main__":
     test_repeated_log_lines_collapse()
     test_important_line_survives_compression()
@@ -151,4 +224,6 @@ if __name__ == "__main__":
     test_adaptive_dedup_threshold_is_reasonable()
     test_model_aware_token_counts_differ_or_run()
     test_repeated_log_block_summarized()
+    test_parse_unified_diff_finds_hunks_per_file()
+    test_compress_diff_keeps_changed_and_cross_file_dependency()
     print("\nAll tests passed.")

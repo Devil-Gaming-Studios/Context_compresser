@@ -29,6 +29,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("file", nargs="?", help="Path to the file to compress")
     parser.add_argument("--repo", metavar="DIR", help="Compress every source file under DIR instead of a single file")
+    parser.add_argument("--diff", metavar="BASE_REF", nargs="?", const="HEAD",
+                         help="Diff-aware mode: compress only what changed vs BASE_REF (default HEAD) plus needed "
+                              "context. Reads the repo at --repo (or the current directory if --repo is omitted).")
+    parser.add_argument("--diff-target-ref", metavar="REF", default=None,
+                         help="Compare BASE_REF..REF instead of BASE_REF..working-tree (used with --diff)")
+    parser.add_argument("--diff-file", metavar="PATH",
+                         help="Diff-aware mode from a standalone unified diff file (e.g. a GitHub PR's .diff URL "
+                              "downloaded to disk) instead of running git. Requires --repo to point at a checkout "
+                              "containing the new (post-change) file contents.")
     parser.add_argument("--target", type=float, default=None, help="Fraction of tokens to remove, e.g. 0.7 (default: 0.70, or the preset's value)")
     parser.add_argument("--content-type", choices=["auto", "code", "logs", "prose"], default="auto")
     parser.add_argument("--preset", choices=list(PRESETS), default=None, help="Named preset bundling target/dedup/floor settings")
@@ -114,17 +123,75 @@ def _run_repo(args) -> int:
     return 0
 
 
+def _run_diff(args) -> int:
+    from context_compressor.git_diff import compress_diff
+
+    target = args.target if args.target is not None else (
+        PRESETS[args.preset].target_compression if args.preset else 0.70
+    )
+    repo_path = args.repo or "."
+
+    try:
+        if args.diff_file:
+            with open(args.diff_file, "r", encoding="utf-8", errors="ignore") as f:
+                diff_text = f.read()
+            report = compress_diff(
+                repo_path=repo_path, diff_text=diff_text, target_compression=target, model=args.model,
+            )
+        else:
+            report = compress_diff(
+                repo_path=repo_path, base_ref=args.diff, target_ref=args.diff_target_ref,
+                target_compression=target, model=args.model,
+            )
+    except (RuntimeError, ValueError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+
+    if not report.files:
+        print("no changed files with compressible content found", file=sys.stderr)
+        return 0
+
+    if args.out:
+        import os
+
+        os.makedirs(args.out, exist_ok=True)
+        for fr in report.files:
+            dest = os.path.join(args.out, fr.path)
+            os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
+            with open(dest, "w", encoding="utf-8") as f:
+                f.write(fr.compressed_text)
+        if not args.quiet:
+            print(f"compressed files written under {args.out}", file=sys.stderr)
+    else:
+        for fr in report.files:
+            print(f"----- {fr.path} ({fr.original_tokens} -> {fr.compressed_tokens} tokens, "
+                  f"{fr.changed_blocks_kept} changed block(s) kept, "
+                  f"{fr.dependency_blocks_restored} dependency block(s) restored) -----")
+            print(fr.compressed_text)
+            print()
+
+    if not args.quiet:
+        print(report.summary(), file=sys.stderr)
+        for n in report.notes:
+            print(f"  {n}", file=sys.stderr)
+        if report.files_skipped:
+            print(f"  skipped: {', '.join(report.files_skipped)}", file=sys.stderr)
+    return 0
+
+
 def main(argv=None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if not args.file and not args.repo:
+    if not args.file and not args.repo and not args.diff and not args.diff_file:
         parser.print_help()
         return 1
-    if args.file and args.repo:
-        print("error: pass either a single FILE or --repo DIR, not both", file=sys.stderr)
+    if args.file and (args.repo or args.diff or args.diff_file):
+        print("error: pass either a single FILE, --repo DIR, or --diff/--diff-file, not a mix", file=sys.stderr)
         return 1
 
+    if args.diff or args.diff_file:
+        return _run_diff(args)
     if args.repo:
         return _run_repo(args)
     return _run_single_file(args)
