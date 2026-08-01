@@ -54,6 +54,32 @@ print(report.summary())
 print(report.compressed_text)
 ```
 
+## Run the FastAPI + React app
+
+**Backend** (Python, serves the compression engine over HTTP):
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+**Frontend** (React + Vite):
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open the URL Vite prints (usually `http://localhost:5173`). It talks to the
+backend at `http://localhost:8000` by default — copy `.env.example` to
+`.env` in `frontend/` to point it elsewhere.
+
+The UI: paste text or drop a file, pick a content type (or leave it on
+`auto`), set a target reduction with the slider, and run compression. You'll
+see token counts before/after, a compression bar, and a line-by-line diff —
+kept lines in green, removed lines struck through in rust.
+
+## Run the CLI (no server needed)
+
 ## Run the benchmark
 
 ```bash
@@ -90,13 +116,21 @@ step once you have an API key and a question set to test against.
 
 ```
 context_compressor/
-├── context_compressor/
+├── context_compressor/    # the compression engine (importable package)
 │   ├── __init__.py
-│   ├── compressor.py     # main ContextCompressor class
-│   ├── boilerplate.py    # structural dedup (blank lines, repeated lines)
-│   ├── dedup.py           # TF-IDF semantic near-duplicate removal
-│   ├── scoring.py         # information-density scoring
-│   └── tokenizer.py       # token counting (tiktoken w/ fallback)
+│   ├── compressor.py       # main ContextCompressor class
+│   ├── boilerplate.py      # structural dedup (blank lines, repeated lines)
+│   ├── dedup.py             # TF-IDF semantic near-duplicate removal
+│   ├── scoring.py           # information-density scoring
+│   └── tokenizer.py         # token counting (tiktoken w/ fallback)
+├── backend/                # FastAPI server wrapping the engine
+│   ├── main.py
+│   ├── requirements.txt
+│   └── context_compressor/  # copy of the engine package (self-contained)
+├── frontend/                # React + Vite UI
+│   ├── src/App.jsx
+│   ├── src/App.css
+│   └── ...
 ├── sample_data/
 │   ├── sample_code.py
 │   └── sample_logs.txt
