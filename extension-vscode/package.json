@@ -7,8 +7,20 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other", "Machine Learning"],
-  "keywords": ["llm", "tokens", "context", "compression", "claude", "chatgpt", "copilot", "cursor"],
+  "categories": [
+    "Other",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "llm",
+    "tokens",
+    "context",
+    "compression",
+    "claude",
+    "chatgpt",
+    "copilot",
+    "cursor"
+  ],
   "icon": "icons/icon.png",
   "repository": {
     "type": "git",
@@ -60,18 +72,30 @@
       "properties": {
         "contextCompressor.apiBase": {
           "type": "string",
-          "default": "http://localhost:8000",
-          "description": "Base URL of a running Context Compressor backend (see backend/main.py -- uvicorn main:app --port 8000)."
+          "default": "https://context-compresser.onrender.com",
+          "description": "Base URL of the Context Compressor backend. Uses https://context-compresser.onrender.com by default; set this to your localhost backend only if you are self-hosting."
         },
         "contextCompressor.model": {
           "type": "string",
-          "enum": ["default", "gpt-4", "gpt-4o", "gpt-3.5", "claude", "gemini"],
+          "enum": [
+            "default",
+            "gpt-4",
+            "gpt-4o",
+            "gpt-3.5",
+            "claude",
+            "gemini"
+          ],
           "default": "claude",
           "description": "Tokenizer profile used for token counts and budget targets."
         },
         "contextCompressor.preset": {
           "type": "string",
-          "enum": ["conservative", "balanced", "aggressive", "custom"],
+          "enum": [
+            "conservative",
+            "balanced",
+            "aggressive",
+            "custom"
+          ],
           "default": "balanced",
           "description": "Named compression preset. Choose 'custom' to use contextCompressor.targetCompression directly."
         },
@@ -84,7 +108,12 @@
         },
         "contextCompressor.contentType": {
           "type": "string",
-          "enum": ["auto", "code", "logs", "prose"],
+          "enum": [
+            "auto",
+            "code",
+            "logs",
+            "prose"
+          ],
           "default": "auto",
           "description": "Content type hint passed to the compressor. 'auto' detects code vs. logs vs. prose."
         },
@@ -95,7 +124,13 @@
         },
         "contextCompressor.budgetPreset": {
           "type": "string",
-          "enum": ["none", "claude-200k", "gpt4o-128k", "gpt4-8k", "gemini-1m"],
+          "enum": [
+            "none",
+            "claude-200k",
+            "gpt4o-128k",
+            "gpt4-8k",
+            "gemini-1m"
+          ],
           "default": "claude-200k",
           "description": "Model context-window budget shown alongside the live token counter, e.g. 'fit into Claude's 200K'."
         }

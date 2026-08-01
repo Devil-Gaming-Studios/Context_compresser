@@ -45,8 +45,7 @@ async function postJson<T>(apiBase: string, path: string, body: unknown): Promis
     });
   } catch (err) {
     throw new CompressorApiError(
-      `Can't reach the Context Compressor API at ${apiBase}. Is the backend running ` +
-        `(uvicorn main:app --port 8000), and is contextCompressor.apiBase set correctly?`
+      `Can't reach the Context Compressor API at ${apiBase}. Is the backend running, and is contextCompressor.apiBase set correctly?`
     );
   }
 
