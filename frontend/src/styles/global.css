@@ -1401,7 +1401,7 @@ body {
   flex-wrap: wrap;
 }
 
- (premium pill tabs) ────────────────────────────────── */
+ /*------------(premium pill tabs) ────────────────────────────────── */
 .tab-bar {
   display: inline-flex;
   align-items: center;
