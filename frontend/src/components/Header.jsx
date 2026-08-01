@@ -41,6 +41,7 @@ export default function Header() {
           <NavLink to="/" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} end>Home</NavLink>
           <NavLink to="/app" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Compress</NavLink>
           <NavLink to="/docs" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Docs</NavLink>
+          <NavLink to="/benchmarks" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Benchmarks</NavLink>
         </nav>
       </div>
       <div className="header-right">

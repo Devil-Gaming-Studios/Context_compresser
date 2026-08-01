@@ -1620,6 +1620,101 @@ body {
   line-height: 1.6;
 }
 
+/* ─── Benchmarks Page ────────────────────────────────────────────── */
+.benchmarks-page {
+  max-width: 860px;
+}
+
+.bench-intro {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--space-4);
+}
+
+.bench-loading {
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+}
+
+.bench-stat-cards {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: var(--space-4);
+}
+
+.bench-note p {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+.bench-note code, .doc-section code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--color-text);
+}
+
+.bench-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.bench-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bench-bar-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+.bench-name {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+.bench-name-ours {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.bench-bar-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.bar-reduced-muted {
+  background: var(--color-text-muted);
+  animation: none;
+}
+
+.bench-retention {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.bench-skipped {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bench-skipped-row {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .hero { padding: var(--space-10) var(--space-3) var(--space-6); }
@@ -1632,6 +1727,7 @@ body {
   .site-header { width: calc(100% - var(--space-3)); padding: 6px var(--space-1); }
   .header-nav { display: none; }
   .ext-tooltip { width: 260px; right: -40px; }
+  .bench-stat-cards { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ─── Reduced Motion ─────────────────────────────────────────────── */

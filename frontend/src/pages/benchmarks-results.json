@@ -1,0 +1,184 @@
+{
+  "target_compression": 0.7,
+  "quality_eval_ran": false,
+  "per_dataset": [
+    {
+      "dataset": "sample_code.py",
+      "adapter_key": "ours",
+      "adapter_name": "Context Compressor (ours)",
+      "adapter_url": "https://github.com/Devil-Gaming-Studios/Context_compresser",
+      "original_tokens": 464,
+      "compressed_tokens": 86,
+      "compression_ratio": 0.8146551724137931,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": null
+    },
+    {
+      "dataset": "sample_code.py",
+      "adapter_key": "naive_truncation",
+      "adapter_name": "Naive truncation (floor)",
+      "adapter_url": "",
+      "original_tokens": 464,
+      "compressed_tokens": 124,
+      "compression_ratio": 0.7327586206896552,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": null
+    },
+    {
+      "dataset": "sample_code.py",
+      "adapter_key": "selective_context_lite",
+      "adapter_name": "Selective-Context (simplified reimpl.)",
+      "adapter_url": "https://github.com/liyucheng09/Selective_Context",
+      "original_tokens": 464,
+      "compressed_tokens": 22,
+      "compression_ratio": 0.9525862068965517,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": null
+    },
+    {
+      "dataset": "sample_code.py",
+      "adapter_key": "llmlingua",
+      "adapter_name": "LLMLingua",
+      "adapter_url": "https://github.com/microsoft/LLMLingua",
+      "original_tokens": 0,
+      "compressed_tokens": 0,
+      "compression_ratio": 0.0,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": "error: 403 Client Error: Forbidden for url: https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken"
+    },
+    {
+      "dataset": "sample_logs.txt",
+      "adapter_key": "ours",
+      "adapter_name": "Context Compressor (ours)",
+      "adapter_url": "https://github.com/Devil-Gaming-Studios/Context_compresser",
+      "original_tokens": 400,
+      "compressed_tokens": 116,
+      "compression_ratio": 0.71,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": null
+    },
+    {
+      "dataset": "sample_logs.txt",
+      "adapter_key": "naive_truncation",
+      "adapter_name": "Naive truncation (floor)",
+      "adapter_url": "",
+      "original_tokens": 400,
+      "compressed_tokens": 116,
+      "compression_ratio": 0.71,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": null
+    },
+    {
+      "dataset": "sample_logs.txt",
+      "adapter_key": "selective_context_lite",
+      "adapter_name": "Selective-Context (simplified reimpl.)",
+      "adapter_url": "https://github.com/liyucheng09/Selective_Context",
+      "original_tokens": 400,
+      "compressed_tokens": 400,
+      "compression_ratio": 0.0,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": null
+    },
+    {
+      "dataset": "sample_logs.txt",
+      "adapter_key": "llmlingua",
+      "adapter_name": "LLMLingua",
+      "adapter_url": "https://github.com/microsoft/LLMLingua",
+      "original_tokens": 0,
+      "compressed_tokens": 0,
+      "compression_ratio": 0.0,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": "error: 403 Client Error: Forbidden for url: https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken"
+    },
+    {
+      "dataset": "README.md",
+      "adapter_key": "ours",
+      "adapter_name": "Context Compressor (ours)",
+      "adapter_url": "https://github.com/Devil-Gaming-Studios/Context_compresser",
+      "original_tokens": 2683,
+      "compressed_tokens": 808,
+      "compression_ratio": 0.6988445769660827,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": null
+    },
+    {
+      "dataset": "README.md",
+      "adapter_key": "naive_truncation",
+      "adapter_name": "Naive truncation (floor)",
+      "adapter_url": "",
+      "original_tokens": 2683,
+      "compressed_tokens": 774,
+      "compression_ratio": 0.711516958628401,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": null
+    },
+    {
+      "dataset": "README.md",
+      "adapter_key": "selective_context_lite",
+      "adapter_name": "Selective-Context (simplified reimpl.)",
+      "adapter_url": "https://github.com/liyucheng09/Selective_Context",
+      "original_tokens": 2683,
+      "compressed_tokens": 352,
+      "compression_ratio": 0.868803578084234,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": null
+    },
+    {
+      "dataset": "README.md",
+      "adapter_key": "llmlingua",
+      "adapter_name": "LLMLingua",
+      "adapter_url": "https://github.com/microsoft/LLMLingua",
+      "original_tokens": 0,
+      "compressed_tokens": 0,
+      "compression_ratio": 0.0,
+      "retention": null,
+      "retention_questions": null,
+      "skipped_reason": "error: 403 Client Error: Forbidden for url: https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken"
+    }
+  ],
+  "leaderboard": {
+    "ours": {
+      "adapter_name": "Context Compressor (ours)",
+      "adapter_url": "https://github.com/Devil-Gaming-Studios/Context_compresser",
+      "skipped_reason": null,
+      "datasets_evaluated": 3,
+      "overall_compression_ratio": 0.715252325909219,
+      "avg_retention": null
+    },
+    "naive_truncation": {
+      "adapter_name": "Naive truncation (floor)",
+      "adapter_url": "",
+      "skipped_reason": null,
+      "datasets_evaluated": 3,
+      "overall_compression_ratio": 0.7141246123484635,
+      "avg_retention": null
+    },
+    "selective_context_lite": {
+      "adapter_name": "Selective-Context (simplified reimpl.)",
+      "adapter_url": "https://github.com/liyucheng09/Selective_Context",
+      "skipped_reason": null,
+      "datasets_evaluated": 3,
+      "overall_compression_ratio": 0.7817874259937976,
+      "avg_retention": null
+    },
+    "llmlingua": {
+      "adapter_name": "LLMLingua",
+      "adapter_url": "https://github.com/microsoft/LLMLingua",
+      "skipped_reason": "error: 403 Client Error: Forbidden for url: https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken",
+      "datasets_evaluated": 0,
+      "overall_compression_ratio": null,
+      "avg_retention": null
+    }
+  }
+}

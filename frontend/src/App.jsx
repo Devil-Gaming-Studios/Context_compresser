@@ -5,6 +5,7 @@ import Header from './components/Header.jsx'
 import Home from './pages/Home.jsx'
 import Workspace from './pages/Workspace.jsx'
 import Docs from './pages/Docs.jsx'
+import Benchmarks from './pages/Benchmarks.jsx'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/app" element={<Workspace />} />
           <Route path="/docs" element={<Docs />} />
+          <Route path="/benchmarks" element={<Benchmarks />} />
         </Routes>
       </div>
     </AppProvider>
