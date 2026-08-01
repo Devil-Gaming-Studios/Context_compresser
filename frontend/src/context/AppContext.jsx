@@ -3,13 +3,8 @@ import { createContext, useContext, useState, useCallback } from 'react'
 const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
-  // ── Model (shared across workspace) ──
   const [model, setModel] = useState('default')
 
-  // ── Health ──
-  const [apiConnected, setApiConnected] = useState(false)
-
-  // ── Text tab state ──
   const [textInput, setTextInput] = useState('')
   const [textFile, setTextFile] = useState(null)
   const [textContentType, setTextContentType] = useState('auto')
@@ -19,7 +14,6 @@ export function AppProvider({ children }) {
   const [textLoading, setTextLoading] = useState(false)
   const [textError, setTextError] = useState(null)
 
-  // ── Diff tab state ──
   const [diffText, setDiffText] = useState('')
   const [diffFileContents, setDiffFileContents] = useState({})
   const [diffPrUrl, setDiffPrUrl] = useState('')
@@ -28,7 +22,6 @@ export function AppProvider({ children }) {
   const [diffLoading, setDiffLoading] = useState(false)
   const [diffError, setDiffError] = useState(null)
 
-  // ── Presets cache ──
   const [presets, setPresets] = useState(null)
 
   const resetText = useCallback(() => {
@@ -54,7 +47,6 @@ export function AppProvider({ children }) {
     <AppContext.Provider
       value={{
         model, setModel,
-        apiConnected, setApiConnected,
         textInput, setTextInput,
         textFile, setTextFile,
         textContentType, setTextContentType,

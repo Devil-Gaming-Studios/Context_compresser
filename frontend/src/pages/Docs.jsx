@@ -1,60 +1,80 @@
 export default function Docs() {
   return (
     <div className="page docs-page">
-      <h1>How it works</h1>
+      <h1>Documentation</h1>
 
       <section className="doc-section">
-        <h2>Pipeline steps</h2>
+        <h2>What is Context Compress?</h2>
+        <p>
+          Context Compress is a preprocessing tool that reduces the size of long text, code, and log
+          contexts before they are sent to a large language model. By removing redundancy and low-signal
+          content, it lowers token usage, cuts API costs, and speeds up inference — all while
+          preserving the information the model actually needs to answer accurately.
+        </p>
+      </section>
+
+      <section className="doc-section">
+        <h2>How it works</h2>
+        <p>
+          The compressor runs your input through a multi-stage pipeline designed to maximize
+          information density:
+        </p>
         <ol className="pipeline-list">
-          <li><strong>Structural strip</strong> — removes redundant imports, closing braces, decorative comments.</li>
-          <li><strong>Chunk</strong> — splits content into semantic blocks (functions, classes, paragraphs).</li>
-          <li><strong>Semantic dedup</strong> — TF-IDF scoring removes near-duplicate chunks.</li>
-          <li><strong>Density scoring</strong> — ranks remaining chunks by information density.</li>
-          <li><strong>Budget selection</strong> — keeps the highest-value chunks until the token budget is hit.</li>
+          <li><strong>Structural analysis</strong> — identifies and collapses redundant formatting, imports, and boilerplate.</li>
+          <li><strong>Semantic chunking</strong> — splits content into meaningful blocks (functions, paragraphs, log entries).</li>
+          <li><strong>Deduplication</strong> — scores chunks for uniqueness and removes near-duplicates.</li>
+          <li><strong>Density ranking</strong> — keeps the highest-value chunks within your target token budget.</li>
+          <li><strong>Dependency preservation</strong> — ensures no function or definition is dropped if another kept block still references it.</li>
         </ol>
       </section>
 
       <section className="doc-section">
-        <h2>API reference</h2>
-        <div className="endpoint-list">
-          <div className="endpoint-row">
-            <span className="method">POST</span>
-            <code>/compress</code>
-            <span className="desc">Compress raw text</span>
-          </div>
-          <div className="endpoint-row">
-            <span className="method">POST</span>
-            <code>/compress/file</code>
-            <span className="desc">Upload and compress a file</span>
-          </div>
-          <div className="endpoint-row">
-            <span className="method">POST</span>
-            <code>/compress/diff</code>
-            <span className="desc">Compress a manual unified diff</span>
-          </div>
-          <div className="endpoint-row">
-            <span className="method">POST</span>
-            <code>/compress/diff/github</code>
-            <span className="desc">Compress a GitHub PR diff</span>
-          </div>
-          <div className="endpoint-row">
-            <span className="method">GET</span>
-            <code>/presets</code>
-            <span className="desc">List compression presets</span>
-          </div>
-          <div className="endpoint-row">
-            <span className="method">GET</span>
-            <code>/health</code>
-            <span className="desc">Health check</span>
-          </div>
-        </div>
+        <h2>Supported inputs</h2>
+        <ul className="plain-list">
+          <li>Raw text, code, logs, or prose pasted directly into the editor</li>
+          <li>File uploads — .txt, .log, .py, .js, .md, .json, .csv, and more</li>
+          <li>Unified diff files or patches for manual review</li>
+          <li>GitHub pull request URLs for automatic diff fetching</li>
+        </ul>
+      </section>
+
+      <section className="doc-section">
+        <h2>Compression presets</h2>
+        <p>
+          Choose a preset that matches your risk tolerance:
+        </p>
+        <ul className="plain-list">
+          <li><strong>Conservative</strong> — light trim, accuracy-first approach</li>
+          <li><strong>Balanced</strong> — the default trade-off between size and fidelity</li>
+          <li><strong>Aggressive</strong> — maximum reduction for cost-sensitive workloads</li>
+          <li><strong>Custom</strong> — dial in your own target reduction percentage</li>
+        </ul>
+      </section>
+
+      <section className="doc-section">
+        <h2>Model selection</h2>
+        <p>
+          Picking a target model changes the tokenizer used to count tokens, so your before/after
+          numbers reflect that model's real token economics. Supported profiles include OpenAI's
+          GPT-4 and GPT-4o families, as well as approximations for Claude and Gemini.
+        </p>
+      </section>
+
+      <section className="doc-section">
+        <h2>Privacy & security</h2>
+        <p>
+          All compression happens server-side over an encrypted connection. We do not store your
+          inputs or outputs beyond the duration of the request. For sensitive code, you may run the
+          compressor in a self-hosted environment.
+        </p>
       </section>
 
       <section className="doc-section">
         <h2>Accuracy evaluation</h2>
         <p>
-          The frontend reports structural and token-level stats. Real downstream LLM accuracy retention
-          requires <code>eval_harness.py</code> — wire it up separately if you need live accuracy scores.
+          The built-in metrics report structural and token-level statistics. For rigorous downstream
+          accuracy validation, we recommend running your own LLM evaluation harness against the
+          compressed outputs.
         </p>
       </section>
     </div>

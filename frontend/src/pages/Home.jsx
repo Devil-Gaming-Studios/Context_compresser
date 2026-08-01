@@ -2,77 +2,98 @@ import { useNavigate } from 'react-router-dom'
 
 export default function Home() {
   const navigate = useNavigate()
-
   return (
     <div className="page home-page">
+      <div className="hero-bg" />
       <section className="hero">
+        <div className="hero-badge glass-pill">✦ Context Compress</div>
         <h1 className="hero-title">
-          Strip repetitive syntax and filler from long contexts
-          <br />
-          <span className="hero-accent">before they hit the model</span>
+          Shrink long contexts.<br />
+          <span className="gradient-text">Keep every insight.</span>
         </h1>
-        <div className="hero-stats">
-          <div className="hero-stat">
-            <span className="hero-stat-value">&gt;70%</span>
-            <span className="hero-stat-label">size reduction</span>
-          </div>
-          <div className="hero-stat">
-            <span className="hero-stat-value">95%+</span>
-            <span className="hero-stat-label">accuracy retention</span>
-          </div>
-        </div>
+        <p className="hero-sub">
+          Strip repetitive syntax and filler from code, logs, and documents
+          before they reach your LLM — so you pay less and get more.
+        </p>
         <div className="hero-ctas">
-          <button className="btn-primary" onClick={() => navigate('/app')}>
+          <button className="btn-primary btn-lg" onClick={() => navigate('/app')}>
             Start compressing →
           </button>
-          <button className="btn-ghost" onClick={() => navigate('/docs')}>
-            How it works
+          <button className="btn-ghost btn-lg" onClick={() => navigate('/docs')}>
+            Learn more
           </button>
+        </div>
+        <div className="hero-stats-row">
+          <div className="hero-stat glass">
+            <span className="hero-stat-value">&gt;70%</span>
+            <span className="hero-stat-label">smaller prompts</span>
+          </div>
+          <div className="hero-stat glass">
+            <span className="hero-stat-value">95%+</span>
+            <span className="hero-stat-label">accuracy retained</span>
+          </div>
+          <div className="hero-stat glass">
+            <span className="hero-stat-value">3×</span>
+            <span className="hero-stat-label">faster inference</span>
+          </div>
         </div>
       </section>
 
-      <section className="feature-grid">
-        <div className="feature-card">
-          <div className="feature-icon">⊜</div>
-          <h3>Semantic deduplication</h3>
-          <p>TF-IDF near-duplicate removal eliminates repeated boilerplate across chunks without losing unique signal.</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">⊟</div>
-          <h3>Structural stripping</h3>
-          <p>Collapses redundant structural lines — imports, closing braces, decorative comments — while preserving semantics.</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">⊡</div>
-          <h3>Dependency-aware chunking</h3>
-          <p>Never drops a function another kept block still calls. The compressor builds a dependency graph before cutting.</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">⊞</div>
-          <h3>Diff-aware PR compression</h3>
-          <p>Compresses GitHub PR diffs by keeping changed blocks and restoring only the dependencies they touch.</p>
+      <section className="features-section">
+        <h2 className="section-title">How it works</h2>
+        <div className="feature-grid">
+          <div className="feature-card glass">
+            <div className="feature-icon">⊜</div>
+            <h3>Semantic deduplication</h3>
+            <p>Near-duplicate removal powered by TF-IDF scoring eliminates repeated boilerplate without losing unique signal.</p>
+          </div>
+          <div className="feature-card glass">
+            <div className="feature-icon">⊟</div>
+            <h3>Structural stripping</h3>
+            <p>Collapses redundant imports, closing braces, and decorative comments while preserving meaning.</p>
+          </div>
+          <div className="feature-card glass">
+            <div className="feature-icon">⊡</div>
+            <h3>Dependency awareness</h3>
+            <p>Builds a call-graph before cutting — never drops a function another kept block still references.</p>
+          </div>
+          <div className="feature-card glass">
+            <div className="feature-icon">⊞</div>
+            <h3>Diff-aware PR compression</h3>
+            <p>Compress GitHub PR diffs by keeping changed blocks and restoring only the dependencies they touch.</p>
+          </div>
         </div>
       </section>
 
       <section className="metrics-section">
-        <h2>Evaluation metrics</h2>
+        <h2 className="section-title">Built for real results</h2>
         <div className="metrics-grid">
-          <div className="metric">
+          <div className="metric-card glass">
             <span className="metric-name">Compression ratio</span>
-            <span className="metric-desc">How much smaller the output is versus the input, measured in tokens.</span>
+            <span className="metric-desc">Measure how much smaller your output is versus the input, in real tokens.</span>
           </div>
-          <div className="metric">
+          <div className="metric-card glass">
             <span className="metric-name">Cost reduction</span>
-            <span className="metric-desc">Estimated API cost savings based on the target model's per-token pricing.</span>
+            <span className="metric-desc">See estimated API savings based on your target model's per-token pricing.</span>
           </div>
-          <div className="metric">
+          <div className="metric-card glass">
             <span className="metric-name">Accuracy retention</span>
-            <span className="metric-desc">Structural and semantic fidelity score. Real downstream LLM eval available via <code>eval_harness.py</code>.</span>
+            <span className="metric-desc">Structural and semantic fidelity scoring ensures nothing important is lost.</span>
           </div>
-          <div className="metric">
+          <div className="metric-card glass">
             <span className="metric-name">Latency speedup</span>
-            <span className="metric-desc">Time saved on inference due to shorter prompt length.</span>
+            <span className="metric-desc">Shorter prompts mean faster time-to-first-token from your LLM provider.</span>
           </div>
+        </div>
+      </section>
+
+      <section className="cta-section">
+        <div className="cta-card glass">
+          <h2>Ready to compress?</h2>
+          <p>Drop in code, logs, or a PR diff and see the difference in seconds.</p>
+          <button className="btn-primary btn-lg" onClick={() => navigate('/app')}>
+            Open the workspace →
+          </button>
         </div>
       </section>
     </div>

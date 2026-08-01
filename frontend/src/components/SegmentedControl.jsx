@@ -7,7 +7,6 @@ export default function SegmentedControl({ options, value, onChange, disabled = 
           className={`seg-btn ${value === opt.value ? 'active' : ''}`}
           onClick={() => !disabled && onChange(opt.value)}
           disabled={disabled}
-          title={opt.hint || opt.label}
         >
           {opt.label}
         </button>

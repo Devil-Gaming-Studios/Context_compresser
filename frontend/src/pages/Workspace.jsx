@@ -13,29 +13,21 @@ const TABS = [
 export default function Workspace() {
   const [params, setParams] = useSearchParams()
   const activeTab = params.get('tab') || 'text'
-
-  const setTab = (key) => {
-    setParams({ tab: key })
-  }
+  const setTab = (key) => setParams({ tab: key })
 
   return (
     <div className="page workspace-page">
       <div className="workspace-shell">
-        <div className="workspace-toolbar">
+        <div className="workspace-toolbar glass">
           <div className="tab-bar">
             {TABS.map((t) => (
-              <button
-                key={t.key}
-                className={`tab-btn ${activeTab === t.key ? 'active' : ''}`}
-                onClick={() => setTab(t.key)}
-              >
+              <button key={t.key} className={`tab-btn ${activeTab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>
                 {t.label}
               </button>
             ))}
           </div>
           <ModelSelector />
         </div>
-
         <div className="workspace-body">
           {activeTab === 'text' && <TextTab />}
           {activeTab === 'diff' && <DiffTab />}
