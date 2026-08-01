@@ -1,6 +1,6 @@
 import { useApp } from '../context/AppContext.jsx'
 
-const MODELS = [
+export const MODELS = [
   { value: 'default', label: 'Auto' },
   { value: 'gpt-4', label: 'GPT-4' },
   { value: 'gpt-4o', label: 'GPT-4o' },

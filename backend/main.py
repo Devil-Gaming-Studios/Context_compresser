@@ -212,6 +212,27 @@ def compress_diff_github_endpoint(req: GithubPrCompressRequest):
     return _to_diff_response(report)
 
 
+class TokenizeRequest(BaseModel):
+    text: str = Field("", description="Text to count tokens for (may be empty)")
+    model: Literal["default", "gpt-4", "gpt-4o", "gpt-3.5", "claude", "gemini"] = "default"
+
+
+class TokenizeResponse(BaseModel):
+    tokens: int
+
+
+@app.post("/tokenize", response_model=TokenizeResponse)
+def tokenize(req: TokenizeRequest):
+    """
+    Cheap token-count-only endpoint (no compression run) so the frontend
+    can show a live "~N tokens" counter while the user is still typing/
+    pasting, without paying the cost of the full compression pipeline.
+    """
+    from context_compressor.tokenizer import count_tokens
+
+    return TokenizeResponse(tokens=count_tokens(req.text, req.model))
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}

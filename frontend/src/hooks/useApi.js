@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 
 const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
@@ -42,6 +42,21 @@ export async function compressFile(file, payload) {
   const res = await fetch(url, { method: 'POST', body: form })
   if (!res.ok) { const text = await res.text().catch(() => 'Unknown error'); throw new Error(`${res.status}: ${text}`) }
   return res.json()
+}
+
+export async function tokenize(payload) {
+  return api('/tokenize', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+// Debounces a fast-changing value (e.g. textarea input) so callers can
+// avoid firing a network request on every keystroke.
+export function useDebouncedValue(value, delayMs = 400) {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs)
+    return () => clearTimeout(id)
+  }, [value, delayMs])
+  return debounced
 }
 
 export async function compressDiff(payload) {
