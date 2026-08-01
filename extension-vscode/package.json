@@ -1,0 +1,117 @@
+{
+  "name": "context-compressor",
+  "displayName": "Context Compressor",
+  "description": "Compress code/log/prose selections before pasting them into Claude, ChatGPT, Cursor, or Copilot Chat -- with a live token counter as you select.",
+  "version": "0.1.0",
+  "publisher": "devil-gaming-studios",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other", "Machine Learning"],
+  "keywords": ["llm", "tokens", "context", "compression", "claude", "chatgpt", "copilot", "cursor"],
+  "icon": "icons/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Devil-Gaming-Studios/Context_compresser.git"
+  },
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "contextCompressor.compressSelectionAndCopy",
+        "title": "Context Compressor: Compress Selection & Copy to Clipboard"
+      },
+      {
+        "command": "contextCompressor.compressSelectionReplace",
+        "title": "Context Compressor: Compress Selection In Place"
+      },
+      {
+        "command": "contextCompressor.compressFile",
+        "title": "Context Compressor: Compress Active File (Preview)"
+      },
+      {
+        "command": "contextCompressor.showReport",
+        "title": "Context Compressor: Show Last Compression Report"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "contextCompressor.compressSelectionAndCopy",
+          "group": "9_cutcopypaste"
+        },
+        {
+          "when": "editorHasSelection",
+          "command": "contextCompressor.compressSelectionReplace",
+          "group": "9_cutcopypaste"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "contextCompressor.showReport",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Context Compressor",
+      "properties": {
+        "contextCompressor.apiBase": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "Base URL of a running Context Compressor backend (see backend/main.py -- uvicorn main:app --port 8000)."
+        },
+        "contextCompressor.model": {
+          "type": "string",
+          "enum": ["default", "gpt-4", "gpt-4o", "gpt-3.5", "claude", "gemini"],
+          "default": "claude",
+          "description": "Tokenizer profile used for token counts and budget targets."
+        },
+        "contextCompressor.preset": {
+          "type": "string",
+          "enum": ["conservative", "balanced", "aggressive", "custom"],
+          "default": "balanced",
+          "description": "Named compression preset. Choose 'custom' to use contextCompressor.targetCompression directly."
+        },
+        "contextCompressor.targetCompression": {
+          "type": "number",
+          "default": 70,
+          "minimum": 5,
+          "maximum": 98,
+          "description": "Target token reduction percentage, only used when preset is 'custom'."
+        },
+        "contextCompressor.contentType": {
+          "type": "string",
+          "enum": ["auto", "code", "logs", "prose"],
+          "default": "auto",
+          "description": "Content type hint passed to the compressor. 'auto' detects code vs. logs vs. prose."
+        },
+        "contextCompressor.liveTokenCounter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a live token count (and, for the active model's budget preset, how much headroom is left) for the current selection in the status bar."
+        },
+        "contextCompressor.budgetPreset": {
+          "type": "string",
+          "enum": ["none", "claude-200k", "gpt4o-128k", "gpt4-8k", "gemini-1m"],
+          "default": "claude-200k",
+          "description": "Model context-window budget shown alongside the live token counter, e.g. 'fit into Claude's 200K'."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0",
+    "@vscode/vsce": "^2.24.0"
+  }
+}

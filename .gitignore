@@ -13,5 +13,9 @@ venv/
 node_modules/
 frontend/dist/
 
+# VS Code extension build
+extension-vscode/out/
+*.vsix
+
 # misc
 *.log

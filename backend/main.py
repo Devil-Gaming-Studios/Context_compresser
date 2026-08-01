@@ -19,6 +19,7 @@ from context_compressor import ContextCompressor
 from context_compressor.git_diff import compress_diff
 from context_compressor.github_fetch import fetch_pr_diff_and_files, parse_pr_reference
 from context_compressor.presets import PRESETS
+from context_compressor.session_compressor import compress_session
 
 app = FastAPI(title="Context Compressor API", version="1.0.0")
 
@@ -274,3 +275,79 @@ async def compress_file(
     if not text.strip():
         raise HTTPException(status_code=400, detail="file is empty")
     return _run_compression(text, target_compression, content_type or "auto", preset, model)
+
+
+class SessionCompressRequest(BaseModel):
+    export: str = Field(
+        ..., min_length=1,
+        description="Raw JSON text of a ChatGPT conversations.json export, a claude.ai "
+                    "conversation export, or a generic [{'role': ..., 'content': ...}, ...] list",
+    )
+    protect_recent: int = Field(4, ge=0, le=100,
+        description="Number of most-recent turns to always keep verbatim, in addition to any system prompt")
+    target_compression: float = Field(0.70, ge=0.05, le=0.98,
+        description="Fraction of tokens to remove from each compressible (older) turn")
+    model: Literal["default", "gpt-4", "gpt-4o", "gpt-3.5", "claude", "gemini"] = "default"
+    dedup_threshold: Optional[float] = Field(0.9, ge=0.0, le=1.0,
+        description="Cosine-similarity cutoff for dropping duplicate older turns; omit/null for adaptive")
+
+
+class SessionTurnOut(BaseModel):
+    role: str
+    original_tokens: int
+    compressed_tokens: int
+    action: str
+    content: str
+
+
+class SessionCompressResponse(BaseModel):
+    turns: List[SessionTurnOut]
+    original_tokens: int
+    compressed_tokens: int
+    compression_ratio: float
+    turns_total: int
+    turns_kept: int
+    turns_dropped_duplicate: int
+    notes: List[str]
+
+
+@app.post("/compress/session", response_model=SessionCompressResponse)
+def compress_session_endpoint(req: SessionCompressRequest):
+    """
+    Compress a chat/conversation export: the system prompt and the most
+    recent `protect_recent` turns are kept verbatim, near-duplicate
+    older turns are dropped, and every other older turn is run through
+    the normal compression pipeline. Useful for trimming long ChatGPT/
+    Claude/agent conversation histories before re-feeding them as
+    context (the "hermes"-style compaction use case).
+    """
+    try:
+        report = compress_session(
+            raw_export=req.export,
+            protect_recent=req.protect_recent,
+            target_compression=req.target_compression,
+            model=req.model,
+            dedup_threshold=req.dedup_threshold,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return SessionCompressResponse(
+        turns=[
+            SessionTurnOut(
+                role=t.role,
+                original_tokens=t.original_tokens,
+                compressed_tokens=t.compressed_tokens,
+                action=t.action,
+                content=t.content,
+            )
+            for t in report.turns
+        ],
+        original_tokens=report.original_tokens,
+        compressed_tokens=report.compressed_tokens,
+        compression_ratio=report.compression_ratio,
+        turns_total=report.turns_total,
+        turns_kept=report.turns_kept,
+        turns_dropped_duplicate=report.turns_dropped_duplicate,
+        notes=report.notes,
+    )

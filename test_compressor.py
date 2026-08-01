@@ -11,6 +11,7 @@ from context_compressor.tokenizer import count_tokens
 from context_compressor.boilerplate import summarize_repeated_blocks
 from context_compressor.dedup import remove_near_duplicates, adaptive_threshold
 from context_compressor.git_diff import parse_unified_diff, compress_diff
+from context_compressor.session_compressor import compress_session, parse_export
 
 
 def test_repeated_log_lines_collapse():
@@ -211,6 +212,94 @@ def test_compress_diff_keeps_changed_and_cross_file_dependency():
     print("PASS: diff-aware compression keeps changed blocks and restores cross-file dependency")
 
 
+def test_session_protects_system_and_recent_turns():
+    import json
+
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that writes concise answers."},
+        {"role": "user", "content": "What's the capital of France, and can you tell me a bit about its history?"},
+        {"role": "assistant", "content": "The capital of France is Paris, a city with over two thousand years of history."},
+        {"role": "user", "content": "thanks, what about Germany?"},
+    ]
+    report = compress_session(json.dumps(messages), protect_recent=1, target_compression=0.6)
+    assert report.turns[0].action == "protected_system"
+    assert report.turns[0].content == messages[0]["content"]
+    assert report.turns[-1].action == "protected_recent"
+    assert report.turns[-1].content == messages[-1]["content"]
+    print("PASS: session compression protects system prompt and recent turns verbatim")
+
+
+def test_session_drops_duplicate_older_turns():
+    import json
+
+    q = "Can you explain how binary search works and why it's O(log n) time complexity?"
+    a = "Binary search repeatedly halves the search interval, giving O(log n) time complexity."
+    messages = [
+        {"role": "user", "content": q},
+        {"role": "assistant", "content": a},
+        {"role": "user", "content": q},
+        {"role": "assistant", "content": a},
+        {"role": "user", "content": "got it, thanks"},
+    ]
+    report = compress_session(json.dumps(messages), protect_recent=1, target_compression=0.5)
+    assert report.turns_dropped_duplicate >= 1
+    dropped = [t for t in report.turns if t.action == "dropped_duplicate"]
+    assert len(dropped) >= 1
+    print("PASS: session compression drops duplicate older turns")
+
+
+def test_session_compresses_older_turns_below_original_size():
+    import json
+
+    long_turn = ("I was wondering if you could help me understand how Python's garbage collector "
+                 "decides when to reclaim memory. I keep hearing conflicting things about reference "
+                 "counting versus the generational collector. Honestly I've read the docs a few times "
+                 "already but it still isn't clicking for me. I want to make sure I actually "
+                 "understand it properly before my exam next week. Could you walk me through it?")
+    messages = [
+        {"role": "user", "content": long_turn},
+        {"role": "assistant", "content": "Python primarily uses reference counting, with a generational "
+                                          "garbage collector to catch reference cycles that counting alone misses."},
+        {"role": "user", "content": "makes sense, thanks!"},
+    ]
+    report = compress_session(json.dumps(messages), protect_recent=1, target_compression=0.6)
+    assert report.compressed_tokens < report.original_tokens
+    print("PASS: session compression reduces token count on older turns")
+
+
+def test_parse_export_detects_chatgpt_and_claude_formats():
+    import json
+
+    chatgpt_export = {
+        "mapping": {
+            "root": {"id": "root", "message": None, "parent": None, "children": ["m1"]},
+            "m1": {"id": "m1", "parent": "root", "children": [],
+                   "message": {"author": {"role": "user"}, "content": {"parts": ["hello"]}}},
+        },
+        "current_node": "m1",
+    }
+    turns, fmt = parse_export(json.dumps(chatgpt_export))
+    assert fmt == "chatgpt" and turns[0].content == "hello"
+
+    claude_export = {"chat_messages": [{"sender": "human", "text": "hi"}, {"sender": "assistant", "text": "hello!"}]}
+    turns, fmt = parse_export(json.dumps(claude_export))
+    assert fmt == "claude" and turns[0].role == "user" and turns[1].role == "assistant"
+
+    generic = [{"role": "user", "content": "hi"}]
+    turns, fmt = parse_export(json.dumps(generic))
+    assert fmt == "generic"
+    print("PASS: parse_export auto-detects chatgpt/claude/generic export formats")
+
+
+def test_session_never_crashes_on_short_transcript():
+    import json
+
+    report = compress_session(json.dumps([{"role": "user", "content": "hi"}]), protect_recent=4)
+    assert report.turns_total == 1
+    assert report.turns[0].action == "protected_recent"
+    print("PASS: session compression handles a transcript shorter than protect_recent")
+
+
 if __name__ == "__main__":
     test_repeated_log_lines_collapse()
     test_important_line_survives_compression()
@@ -226,4 +315,9 @@ if __name__ == "__main__":
     test_repeated_log_block_summarized()
     test_parse_unified_diff_finds_hunks_per_file()
     test_compress_diff_keeps_changed_and_cross_file_dependency()
+    test_session_protects_system_and_recent_turns()
+    test_session_drops_duplicate_older_turns()
+    test_session_compresses_older_turns_below_original_size()
+    test_parse_export_detects_chatgpt_and_claude_formats()
+    test_session_never_crashes_on_short_transcript()
     print("\nAll tests passed.")

@@ -173,6 +173,27 @@ compressor = ContextCompressor(
 )
 ```
 
+### Session / conversation-export compression
+
+Compress a ChatGPT or claude.ai conversation export (or a generic
+`[{"role": ..., "content": ...}, ...]` transcript) instead of a single
+blob of text — useful for trimming a long chat/agent history before
+re-feeding it as context. The system prompt and the most recent N
+turns are always kept verbatim; older turns are deduped (repeated
+questions/answers dropped) and compressed:
+
+```python
+from context_compressor.session_compressor import compress_session
+
+report = compress_session(
+    raw_export=open("conversation.json").read(),  # ChatGPT export, claude.ai export, or generic messages list
+    protect_recent=4,        # always keep the last 4 turns verbatim, in addition to any system prompt
+    target_compression=0.70,
+)
+print(report.summary())
+messages = report.to_messages()  # reconstructed [{"role", "content"}, ...] transcript
+```
+
 ## Run the FastAPI + React app
 
 **Backend** (Python, serves the compression engine over HTTP):
@@ -206,6 +227,8 @@ through in rust.
 - `POST /compress/file` — same, as a multipart file upload
 - `POST /compress/diff` — `{diff_text, file_contents, target_compression?, model?}` — diff-aware compression (see below)
 - `POST /compress/diff/github` — `{pr, target_compression?, model?}` — same, but fetches the diff + file contents itself from a GitHub PR URL (public repos out of the box; set `GITHUB_TOKEN` server-side for private repos / a higher rate limit)
+- `POST /compress/session` — `{export, protect_recent?, target_compression?, model?, dedup_threshold?}` — compress a ChatGPT/claude.ai/generic conversation export (see "Session / conversation-export compression" above)
+- `POST /tokenize` — `{text, model?}` — cheap token-count-only endpoint (no compression run), used for live token counters
 
 ## Run the CLI (no server needed)
 
@@ -229,6 +252,10 @@ python cli.py --repo ./my_project --diff-file pr123.diff --target 0.5
 # no local checkout needed (public repos work out of the box; set GITHUB_TOKEN
 # for private repos or a higher rate limit)
 python cli.py --github-pr https://github.com/owner/repo/pull/123 --target 0.5
+
+# session-compression: trim a ChatGPT/claude.ai/generic conversation export,
+# keeping the system prompt + the last 4 turns verbatim
+python cli.py --session conversation.json --protect-recent 4 --target 0.6 --out compressed.json
 ```
 
 Run `python cli.py --help` for the full option list (presets, dedup
@@ -294,6 +321,7 @@ context_compressor/
 │   ├── multifile.py              # repo-wide compression with cross-file dependency closure
 │   ├── git_diff.py                # diff-aware compression: compress only what a diff touches + needed context
 │   ├── github_fetch.py            # fetch a GitHub PR's diff + changed files via the public REST API (no OAuth)
+│   ├── session_compressor.py     # ChatGPT/claude.ai/generic conversation export compression
 │   └── diff_export.py            # export a compression diff as Markdown/HTML
 ├── backend/                     # FastAPI server wrapping the engine
 │   ├── main.py
@@ -303,10 +331,12 @@ context_compressor/
 │   ├── src/App.jsx
 │   ├── src/App.css
 │   └── ...
+├── extension/                    # Chrome/Edge (Manifest V3) browser extension
+├── extension-vscode/             # VS Code extension (live token counter, compress selection/file)
 ├── sample_data/
 │   ├── sample_code.py
 │   └── sample_logs.txt
-├── cli.py                       # command-line interface (single file or --repo)
+├── cli.py                       # command-line interface (single file, --repo, --diff, or --session)
 ├── eval_harness.py              # downstream answer-accuracy eval against the Anthropic API
 ├── benchmark.py
 ├── test_compressor.py

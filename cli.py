@@ -48,6 +48,12 @@ def build_parser() -> argparse.ArgumentParser:
                               "diff and changed-file contents itself via the public GitHub API -- no git repo, no "
                               "OAuth. Public repos work out of the box; set GITHUB_TOKEN for private repos or a "
                               "higher rate limit.")
+    parser.add_argument("--session", metavar="PATH",
+                         help="Session-compression mode: compress a chat/conversation export JSON file (ChatGPT "
+                              "conversations.json, a claude.ai export, or a generic [{'role','content'}, ...] "
+                              "list). Protects the system prompt and the most recent turns verbatim.")
+    parser.add_argument("--protect-recent", type=int, default=4,
+                         help="Used with --session: number of most-recent turns to always keep verbatim (default: 4)")
     parser.add_argument("--target", type=float, default=None, help="Fraction of tokens to remove, e.g. 0.7 (default: 0.70, or the preset's value)")
     parser.add_argument("--content-type", choices=["auto", "code", "logs", "prose"], default="auto")
     parser.add_argument("--preset", choices=list(PRESETS), default=None, help="Named preset bundling target/dedup/floor settings")
@@ -197,20 +203,68 @@ def _run_diff(args) -> int:
     return 0
 
 
+def _run_session(args) -> int:
+    import json
+
+    from context_compressor.session_compressor import compress_session
+
+    try:
+        with open(args.session, "r", encoding="utf-8") as f:
+            raw = f.read()
+    except OSError as e:
+        print(f"error: could not read {args.session}: {e}", file=sys.stderr)
+        return 1
+
+    target = args.target if args.target is not None else (
+        PRESETS[args.preset].target_compression if args.preset else 0.70
+    )
+
+    try:
+        report = compress_session(
+            raw_export=raw,
+            protect_recent=args.protect_recent,
+            target_compression=target,
+            model=args.model,
+            dedup_threshold=args.dedup_threshold,
+        )
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+
+    messages = report.to_messages()
+    output_json = json.dumps(messages, indent=2, ensure_ascii=False)
+
+    if args.out:
+        with open(args.out, "w", encoding="utf-8") as f:
+            f.write(output_json)
+    else:
+        print(output_json)
+
+    if not args.quiet:
+        print(report.summary(), file=sys.stderr)
+        for n in report.notes:
+            print(f"  {n}", file=sys.stderr)
+    return 0
+
+
 def main(argv=None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if not args.file and not args.repo and not args.diff and not args.diff_file and not args.github_pr:
+    modes = [args.file, args.repo, args.diff, args.diff_file, args.github_pr, args.session]
+    if not any(modes):
         parser.print_help()
         return 1
-    if args.file and (args.repo or args.diff or args.diff_file or args.github_pr):
-        print("error: pass either a single FILE, --repo DIR, or --diff/--diff-file/--github-pr, not a mix", file=sys.stderr)
+    if sum(1 for m in (args.file, args.repo, args.session) if m) + \
+       (1 if (args.diff or args.diff_file or args.github_pr) else 0) > 1:
+        print("error: pass only one of FILE, --repo DIR, --session PATH, or --diff/--diff-file/--github-pr", file=sys.stderr)
         return 1
     if args.github_pr and args.repo:
         print("error: --github-pr fetches its own file contents, don't pass --repo with it", file=sys.stderr)
         return 1
 
+    if args.session:
+        return _run_session(args)
     if args.diff or args.diff_file or args.github_pr:
         return _run_diff(args)
     if args.repo:
