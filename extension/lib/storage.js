@@ -3,7 +3,7 @@
 // across machines where they're signed into the same browser profile.
 
 export const DEFAULT_SETTINGS = {
-  apiBase: 'http://localhost:8000',
+  apiBase: 'https://context-compresser.onrender.com',
   model: 'default',          // default | gpt-4 | gpt-4o | gpt-3.5 | claude | gemini
   preset: 'balanced',        // custom | conservative | balanced | aggressive
   targetCompression: 70,     // used only when preset === 'custom', 5-95
