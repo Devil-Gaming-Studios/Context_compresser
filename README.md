@@ -7,7 +7,7 @@
 *Codebases. Logs. Long documents. Chat histories. Diffs. All compressible — algorithmically, offline, in milliseconds.*
 
 [![No embeddings required](https://img.shields.io/badge/embeddings-none%20required-6f42c1)](#how-it-works)
-[![Runs offline](https://img.shields.io/badge/runs-100%25%20offline-2ea44f)](#how-it-works)
+[![Runs offline](https://img.shields.io/badge/runs-100%25%20online-2ea44f)](#how-it-works)
 [![Presets](https://img.shields.io/badge/presets-conservative%20%7C%20balanced%20%7C%20aggressive-0366d6)](#presets)
 [![CLI](https://img.shields.io/badge/interface-CLI%20%7C%20API%20%7C%20Web%20UI-orange)](#run-the-cli-no-server-needed)
 
