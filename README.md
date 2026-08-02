@@ -301,9 +301,9 @@ metric that actually requires a live model: whether answers to the
 same questions still agree after compression.
 
 ```bash
-pip install anthropic
-export ANTHROPIC_API_KEY=sk-ant-...
-python eval_harness.py my_doc.txt --questions questions.json --target 0.7
+pip install groq rich
+$env:GROQ_API_KEY = "gsk_..."
+python eval_harness.py sample_data\sample_logs.txt --questions questions.json --target 0.7
 ```
 
 `questions.json` is a JSON list of question strings. The harness asks
