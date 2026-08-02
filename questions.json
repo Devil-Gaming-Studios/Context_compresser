@@ -1,0 +1,8 @@
+[
+  "What service is failing over, and to which host?",
+  "What was the root cause of the failover?",
+  "How long did the failover downtime last?",
+  "What database host had connection timeouts, and how many times before the failover?",
+  "What was the p99 latency spike value and threshold?",
+  "What memory usage warning appeared after the failover, and on which host?"
+]
